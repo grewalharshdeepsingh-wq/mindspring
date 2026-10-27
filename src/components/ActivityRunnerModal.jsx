@@ -9,6 +9,7 @@ import GratitudeGarden from './GratitudeGarden';
 import ActionStepsViewer from './ActionStepsViewer';
 import BrainRefresh from './BrainRefresh';
 import SoundscapePlayer from './SoundscapePlayer';
+import MiniGameStudio from './MiniGameStudio';
 import confetti from 'canvas-confetti';
 
 export default function ActivityRunnerModal({ 
@@ -127,6 +128,9 @@ export default function ActivityRunnerModal({
               )}
               {activity.interactiveComponent === 'brain_refresh' && (
                 <BrainRefresh onComplete={handleInteractiveComplete} />
+              )}
+              {activity.interactiveComponent === 'minigame' && (
+                <MiniGameStudio onComplete={handleInteractiveComplete} />
               )}
               {activity.interactiveComponent === 'soundscapes' && (
                 <div className="p-4">

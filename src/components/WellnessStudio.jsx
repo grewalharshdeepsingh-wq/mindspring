@@ -7,7 +7,8 @@ import {
   Flower2, 
   Eye, 
   Heart,
-  Moon
+  Moon,
+  Gamepad2
 } from 'lucide-react';
 import BreathingStudio from './BreathingStudio';
 import MeditationStudio from './MeditationStudio';
@@ -16,6 +17,7 @@ import ThoughtFlipTool from './ThoughtFlipTool';
 import ZenCanvas from './ZenCanvas';
 import GratitudeGarden from './GratitudeGarden';
 import ActionStepsViewer from './ActionStepsViewer';
+import MiniGameStudio from './MiniGameStudio';
 
 export default function WellnessStudio({ flowers, onAddFlower }) {
   const [activeTool, setActiveTool] = useState('meditation');
@@ -26,7 +28,14 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
       name: 'Guided Meditation',
       icon: Moon,
       color: 'from-teal-500 to-cyan-600',
-      desc: 'Guided calming meditation with audio chimes and body scan relaxation.'
+      desc: 'Guided calming meditation with audio chimes, voice coach, and inhale/hold/exhale pacing.'
+    },
+    {
+      id: 'minigame',
+      name: 'Stress Mini-Games',
+      icon: Gamepad2,
+      color: 'from-violet-500 to-purple-600',
+      desc: 'Playable stress busters: Bubble Pop, Zen Stone Balancer & Lotus Catch.'
     },
     {
       id: 'breathing',
@@ -90,7 +99,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
       </div>
 
       {/* Tool Navigation Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         {tools.map((t) => {
           const Icon = t.icon;
           const isActive = activeTool === t.id;
@@ -119,6 +128,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
       {/* Active Tool Viewport */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6">
         {activeTool === 'meditation' && <MeditationStudio />}
+        {activeTool === 'minigame' && <MiniGameStudio />}
         {activeTool === 'breathing' && <BreathingStudio />}
         {activeTool === 'timer' && <StudyTimer />}
         {activeTool === 'thought_flip' && <ThoughtFlipTool />}

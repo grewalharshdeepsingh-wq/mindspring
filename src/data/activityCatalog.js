@@ -256,6 +256,18 @@ export const ACTIVITY_CATALOG = [
     benefit: 'Soothes sensory overload and reduces cortisol naturally.',
     icon: 'Headphones',
     interactiveComponent: 'soundscapes'
+  },
+  {
+    id: 'zen_arcade_break',
+    category: 'break',
+    title: 'Mindful Arcade: Stress-Buster Mini-Games',
+    durationMinutes: 3,
+    type: 'minigame',
+    stressorSuitability: ['exam_stress', 'procrastination', 'overwhelmed', 'anxious', 'scattered', 'sleep_fatigue'],
+    description: 'Pop floating worry bubbles, stack river stones in perfect equilibrium, or catch serene droplets in this delightful stress-relief mini-game suite.',
+    benefit: 'Replaces study fatigue and guilt with positive, relaxing dopamine.',
+    icon: 'Gamepad2',
+    interactiveComponent: 'minigame'
   }
 ];
 

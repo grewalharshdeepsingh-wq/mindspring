@@ -9,6 +9,7 @@ import CounselorCrisisModal from './components/CounselorCrisisModal';
 import PrivacySettingsModal from './components/PrivacySettingsModal';
 import CheckInModal from './components/CheckInModal';
 import ActivityRunnerModal from './components/ActivityRunnerModal';
+import MiniGameStudio from './components/MiniGameStudio';
 import { loadMindSpringVault, saveMindSpringVault } from './utils/storage';
 import { generateDailyPlan, ACTIVITY_CATALOG } from './data/activityCatalog';
 import { ShieldAlert, Sparkles, Heart } from 'lucide-react';
@@ -209,6 +210,18 @@ export default function App() {
             <WellnessStudio
               flowers={vault.gardenFlowers || []}
               onAddFlower={handleAddFlower}
+            />
+          )}
+
+          {activeTab === 'minigame' && (
+            <MiniGameStudio
+              onComplete={(rating) => {
+                handleFinishActivity('minigame_break', {
+                  rating: rating || 5,
+                  feelingShift: 'Refreshed & Cheerful 🎮',
+                  reflectionNote: 'Enjoyed a mindful mini-game break to reset focus and break study fatigue.'
+                });
+              }}
             />
           )}
 

@@ -226,6 +226,158 @@ class SoundEngine {
     }
   }
 
+  // Mini-Game: Bubble Pop Sound
+  playPopSound() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      const startFreq = 340 + Math.random() * 220;
+      osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(startFreq * 2.3, this.ctx.currentTime + 0.07);
+
+      gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.07);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.08);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Zen Stone Stack Clink
+  playZenClink() {
+    try {
+      this.init();
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'sine';
+      osc2.type = 'triangle';
+      osc1.frequency.setValueAtTime(640, this.ctx.currentTime);
+      osc2.frequency.setValueAtTime(960, this.ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc1.start();
+      osc2.start();
+      osc1.stop(this.ctx.currentTime + 0.35);
+      osc2.stop(this.ctx.currentTime + 0.35);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Splash sound when stone falls in water
+  playWaterSplash() {
+    try {
+      this.init();
+      const noiseBuffer = this.createNoiseBuffer();
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(700, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.3);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+
+      noiseSource.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      noiseSource.start();
+      noiseSource.stop(this.ctx.currentTime + 0.35);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Catch Sound (Sweet harmonic sparkle)
+  playCatchSound() {
+    try {
+      this.init();
+      [523.25, 659.25, 783.99].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const startT = this.ctx.currentTime + idx * 0.04;
+        osc.frequency.setValueAtTime(freq, startT);
+        gain.gain.setValueAtTime(0.18, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.3);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(startT);
+        osc.stop(startT + 0.3);
+      });
+    } catch (e) {}
+  }
+
+  // Mini-Game: Level Up / High Score Sparkle
+  playLevelUpSound() {
+    try {
+      this.init();
+      [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const startT = this.ctx.currentTime + idx * 0.07;
+        osc.frequency.setValueAtTime(freq, startT);
+        gain.gain.setValueAtTime(0.2, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.35);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(startT);
+        osc.stop(startT + 0.35);
+      });
+    } catch (e) {}
+  }
+
+  // Meditation Breath Phase Sound Cue (gentle tone matching inhale / hold / exhale)
+  playBreathCue(phase) {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+
+      if (phase === 'inhale') {
+        // Soft rising frequency 240 -> 420 Hz
+        osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(420, this.ctx.currentTime + 1.2);
+        gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 0.5);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.3);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 1.3);
+      } else if (phase === 'hold') {
+        // Serene bell chime (528 Hz)
+        this.playSingleChime(528);
+      } else if (phase === 'exhale') {
+        // Soft descending frequency 420 -> 220 Hz
+        osc.frequency.setValueAtTime(420, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 1.4);
+        gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.5);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 1.5);
+      }
+    } catch (e) {}
+  }
+
   stopAll() {
     this.stopRain();
     this.stopWaves();

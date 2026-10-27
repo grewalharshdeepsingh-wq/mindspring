@@ -9,7 +9,8 @@ import {
   Lock, 
   Feather,
   Table,
-  User
+  User,
+  Gamepad2
 } from 'lucide-react';
 
 export default function Header({ 
@@ -24,6 +25,7 @@ export default function Header({
   const navItems = [
     { id: 'plan', label: 'Daily Wellness Plan', icon: Calendar },
     { id: 'studio', label: 'Wellness Studio', icon: Feather },
+    { id: 'minigame', label: 'Zen Arcade 🎮', icon: Gamepad2 },
     { id: 'table', label: 'Data & Progress Table', icon: Table },
     { id: 'soundscapes', label: 'Soundscapes', icon: Headphones },
     { id: 'growth', label: 'Growth & Insights', icon: BarChart3 },
