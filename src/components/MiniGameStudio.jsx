@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Gamepad2, 
   Sparkles, 
@@ -20,7 +20,8 @@ import {
   Clock,
   Compass,
   Smile,
-  RefreshCw
+  RefreshCw,
+  Rocket
 } from 'lucide-react';
 import { soundEngine } from '../utils/audioSynthesizer';
 import confetti from 'canvas-confetti';
@@ -209,7 +210,7 @@ function GameResultCard({
 }
 
 // ==========================================
-// 1. STRESS BUBBLE POP GAME (Smooth & Reliable)
+// 1. STRESS BUBBLE POP GAME
 // ==========================================
 const STRESS_WORDS = [
   'Exam Panic', 'Overthinking', 'Perfectionism', 'Self-Doubt', 
@@ -225,14 +226,14 @@ const BONUS_WORDS = [
 ];
 
 function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
-  const [gameState, setGameState] = useState('idle'); // 'idle' | 'playing' | 'gameover'
+  const [gameState, setGameState] = useState('idle');
   const [duration, setDuration] = useState(45);
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
   const [poppedCount, setPoppedCount] = useState(0);
   const [combo, setCombo] = useState(1);
   const [bubbles, setBubbles] = useState([]);
-  const [popEffects, setPopEffects] = useState([]); // Visual popping sparks
+  const [popEffects, setPopEffects] = useState([]);
   const [highScore, setHighScore] = useState(() => {
     return parseInt(localStorage.getItem('mindspring_bubble_high') || '0', 10);
   });
@@ -240,7 +241,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
   const nextId = useRef(1);
   const comboTimer = useRef(null);
 
-  // Start the game explicitly
   const handleStartGame = () => {
     setScore(0);
     setPoppedCount(0);
@@ -248,7 +248,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     setTimeLeft(duration);
     setPopEffects([]);
 
-    // Seed 7 initial bubbles distributed vertically and horizontally
     const seeded = [];
     for (let i = 0; i < 7; i++) {
       const isBonus = Math.random() < 0.25;
@@ -262,14 +261,13 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
         x: 12 + (i % 4) * 23 + (Math.random() * 6 - 3),
         y: 15 + Math.floor(i / 4) * 38 + Math.random() * 15,
         size: isBonus ? 78 : 84,
-        speed: 0.25 + Math.random() * 0.35 // gentle float
+        speed: 0.25 + Math.random() * 0.35
       });
     }
     setBubbles(seeded);
     setGameState('playing');
   };
 
-  // Timer countdown while playing
   useEffect(() => {
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
@@ -284,7 +282,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Movement loop for bubbles (smooth delta)
   useEffect(() => {
     if (gameState !== 'playing') return;
     const loop = setInterval(() => {
@@ -292,7 +289,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
         return prev
           .map(b => {
             const nextY = b.y - b.speed;
-            // If bubble leaves the top, recycle it from the bottom
             if (nextY < -15) {
               const isBonus = Math.random() < 0.25;
               const bonusObj = isBonus ? BONUS_WORDS[Math.floor(Math.random() * BONUS_WORDS.length)] : null;
@@ -314,7 +310,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     return () => clearInterval(loop);
   }, [gameState]);
 
-  // Clean up floating pop score effects
   useEffect(() => {
     if (popEffects.length === 0) return;
     const cleanup = setTimeout(() => {
@@ -323,7 +318,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     return () => clearTimeout(cleanup);
   }, [popEffects]);
 
-  // Bubble pop handler (onPointerDown guarantees instant response on touch & mouse)
   const handlePop = (bubble, e) => {
     if (e) {
       e.preventDefault();
@@ -339,13 +333,11 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     setPoppedCount(p => p + 1);
     if (onScoreUpdate) onScoreUpdate(newScore);
 
-    // Save high score
     if (newScore > highScore) {
       setHighScore(newScore);
       localStorage.setItem('mindspring_bubble_high', newScore.toString());
     }
 
-    // Add floating score pop effect
     const newEffect = {
       id: Date.now() + Math.random(),
       x: bubble.x,
@@ -356,12 +348,10 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     };
     setPopEffects(prev => [...prev.slice(-4), newEffect]);
 
-    // Increase combo
     setCombo(c => Math.min(c + 1, 5));
     if (comboTimer.current) clearTimeout(comboTimer.current);
     comboTimer.current = setTimeout(() => setCombo(1), 2000);
 
-    // Mini confetti on bonus pop
     if (bubble.isBonus) {
       try {
         confetti({
@@ -375,7 +365,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
       } catch (err) {}
     }
 
-    // Replace the popped bubble with a new one at the bottom after a tiny delay
     setBubbles(prev => {
       const filtered = prev.filter(b => b.id !== bubble.id);
       const isBonus = Math.random() < 0.28;
@@ -395,7 +384,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     });
   };
 
-  // 1. IDLE SCREEN (Ready to start)
   if (gameState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-6">
@@ -412,7 +400,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
           </p>
         </div>
 
-        {/* Duration selector */}
         <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700 text-xs">
           <span className="font-bold text-slate-500 px-2 flex items-center space-x-1">
             <Clock className="w-3.5 h-3.5" />
@@ -433,13 +420,11 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
           ))}
         </div>
 
-        {/* High score badge */}
         <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center space-x-1.5 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
           <Trophy className="w-3.5 h-3.5" />
           <span>Your Best Score: {highScore} Points</span>
         </div>
 
-        {/* Big Start Button */}
         <button
           onClick={handleStartGame}
           className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-teal-600 hover:from-purple-700 hover:to-teal-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-purple-500/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-purple-400/20"
@@ -451,7 +436,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     );
   }
 
-  // 2. GAME OVER SCREEN
   if (gameState === 'gameover') {
     return (
       <GameResultCard
@@ -470,10 +454,8 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     );
   }
 
-  // 3. ACTIVE PLAYING VIEW
   return (
     <div className="flex flex-col h-full select-none">
-      {/* Active Status Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
         <div className="flex items-center space-x-3">
           <div className="bg-purple-600 text-white font-mono font-extrabold px-3 py-1 rounded-xl shadow-sm text-sm">
@@ -510,13 +492,11 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
         </div>
       </div>
 
-      {/* Floating Canvas Area */}
       <div className="relative flex-1 min-h-[420px] bg-gradient-to-b from-sky-50/70 via-indigo-50/40 to-teal-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-2xl border border-purple-200 dark:border-slate-800 overflow-hidden my-3 shadow-inner select-none touch-none">
         <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-slate-500 pointer-events-none border">
           🫧 Tap or click bubbles to pop them before they float away!
         </div>
 
-        {/* Bubbles */}
         {bubbles.map(b => (
           <div
             key={b.id}
@@ -540,7 +520,6 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
           </div>
         ))}
 
-        {/* Floating pop score spark effects */}
         {popEffects.map(effect => (
           <div
             key={effect.id}
@@ -567,50 +546,101 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
 }
 
 // ==========================================
-// 2. ZEN STONE BALANCER (Accurate Placement & Drop Animation)
+// 2. COSMIC ALIEN RUNNER (Chrome Dino Style, Crying Alien on Hit)
 // ==========================================
-const STONE_GRADIENTS = [
-  'from-stone-500 to-stone-700 border-stone-400',
-  'from-teal-600 to-emerald-800 border-teal-400',
-  'from-slate-600 to-slate-800 border-slate-400',
-  'from-amber-600 to-stone-700 border-amber-400',
-  'from-indigo-600 to-slate-800 border-indigo-400',
-  'from-cyan-600 to-teal-800 border-cyan-400'
-];
-
-function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
+function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
   const [gameState, setGameState] = useState('idle'); // 'idle' | 'playing' | 'gameover'
   const [duration, setDuration] = useState(45);
   const [timeLeft, setTimeLeft] = useState(45);
-  const [tower, setTower] = useState([
-    { x: 50, width: 140, height: 32, color: 'from-emerald-700 to-teal-900 border-emerald-500' }
-  ]);
-  const [swingPos, setSwingPos] = useState(50);
-  const [fallingStone, setFallingStone] = useState(null); // { x, y, width, color }
   const [score, setScore] = useState(0);
-  const [feedbackText, setFeedbackText] = useState('Tap "Drop Stone" or [Spacebar] when centered!');
-  const [perfectCount, setPerfectCount] = useState(0);
-  const [highTower, setHighTower] = useState(() => {
-    return parseInt(localStorage.getItem('mindspring_tower_high') || '1', 10);
+  const [leapsCount, setLeapsCount] = useState(0);
+  const [highScore, setHighScore] = useState(() => {
+    return parseInt(localStorage.getItem('mindspring_alien_high') || '0', 10);
   });
 
-  const swingDirection = useRef(1);
-  const isDroppingRef = useRef(false);
+  const canvasRef = useRef(null);
+
+  // Mutable game physics & state ref (avoids React re-render lag)
+  const gRef = useRef({
+    alienY: 0,
+    velocityY: 0,
+    isJumping: false,
+    isCrying: false,
+    cryingTimer: 0,
+    frame: 0,
+    groundY: 175,
+    obstacles: [],
+    stars: [],
+    nextObstacleTimer: 60,
+    score: 0,
+    leaps: 0,
+    soundEnabled: true,
+    speed: 4.8
+  });
+
+  gRef.current.soundEnabled = soundEnabled;
 
   const handleStartGame = () => {
-    setTower([
-      { x: 50, width: 140, height: 32, color: 'from-emerald-700 to-teal-900 border-emerald-500' }
-    ]);
     setScore(0);
-    setPerfectCount(0);
+    setLeapsCount(0);
     setTimeLeft(duration);
-    setFallingStone(null);
-    isDroppingRef.current = false;
-    setFeedbackText('Aim for the center and drop the river pebble!');
+
+    // Initialise stars for background
+    const stars = [];
+    for (let i = 0; i < 40; i++) {
+      stars.push({
+        x: Math.random() * 800,
+        y: Math.random() * 140,
+        size: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.7 + 0.3
+      });
+    }
+
+    gRef.current = {
+      alienY: 175,
+      velocityY: 0,
+      isJumping: false,
+      isCrying: false,
+      cryingTimer: 0,
+      frame: 0,
+      groundY: 175,
+      obstacles: [],
+      stars,
+      nextObstacleTimer: 50,
+      score: 0,
+      leaps: 0,
+      soundEnabled,
+      speed: 4.8
+    };
+
     setGameState('playing');
   };
 
-  // Timer countdown
+  // Jump trigger (Spacebar, Click, or Touch)
+  const triggerJump = () => {
+    const g = gRef.current;
+    if (gameState !== 'playing' || g.isJumping || g.isCrying) return;
+    g.isJumping = true;
+    g.velocityY = -12.4;
+    if (g.soundEnabled && soundEngine.playJumpSound) {
+      soundEngine.playJumpSound();
+    }
+  };
+
+  // Global keydown listener for Spacebar / ArrowUp
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        triggerJump();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState]);
+
+  // Session timer: KEEPS RUNNING WITHOUT RESETTING EVEN WHEN ALIEN HITS OBSTACLE!
   useEffect(() => {
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
@@ -625,145 +655,323 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Smooth pendulum swing motion
+  // 60FPS Game Loop via requestAnimationFrame
   useEffect(() => {
     if (gameState !== 'playing') return;
-    const interval = setInterval(() => {
-      setSwingPos(prev => {
-        let next = prev + swingDirection.current * 1.35;
-        if (next >= 78) {
-          swingDirection.current = -1;
-          next = 78;
-        } else if (next <= 22) {
-          swingDirection.current = 1;
-          next = 22;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId = null;
+
+    const loop = () => {
+      const g = gRef.current;
+      g.frame++;
+      const W = canvas.width;
+      const H = canvas.height;
+      g.groundY = H - 45;
+
+      // 1. CLEAR & BACKGROUND
+      ctx.fillStyle = '#0f172a'; // dark slate cosmic
+      ctx.fillRect(0, 0, W, H);
+
+      // Distant nebulas
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, '#1e1b4b'); // indigo deep
+      grad.addColorStop(0.7, '#0f172a');
+      grad.addColorStop(1, '#022c22'); // subtle teal ground aura
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Starfield
+      g.stars.forEach(st => {
+        if (!g.isCrying) {
+          st.x -= 0.6;
+          if (st.x < 0) st.x = W + Math.random() * 20;
         }
-        return next;
+        ctx.fillStyle = `rgba(255, 255, 255, ${st.alpha})`;
+        ctx.fillRect(st.x, st.y, st.size, st.size);
       });
-    }, 28);
-    return () => clearInterval(interval);
-  }, [gameState]);
 
-  // Drop Stone Action (Clean falling animation + 100% position match)
-  const dropStone = () => {
-    if (gameState !== 'playing' || isDroppingRef.current) return;
-    isDroppingRef.current = true;
+      // Neon horizon ground line
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, g.groundY);
+      ctx.lineTo(W, g.groundY);
+      ctx.stroke();
 
-    const currentX = swingPos;
-    const topStone = tower[tower.length - 1];
-    const nextColor = STONE_GRADIENTS[tower.length % STONE_GRADIENTS.length];
-    const nextWidth = Math.max(68, topStone.width - 6);
+      // Scrolling terrain dashes
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 2;
+      const dashOffset = (g.frame * g.speed) % 36;
+      for (let x = -dashOffset; x < W; x += 36) {
+        ctx.beginPath();
+        ctx.moveTo(x, g.groundY + 8);
+        ctx.lineTo(x + 18, g.groundY + 8);
+        ctx.stroke();
+      }
 
-    // Initialise falling stone
-    let currentY = 12; // starts near top pendulum
-    setFallingStone({
-      x: currentX,
-      y: currentY,
-      width: nextWidth,
-      color: nextColor
-    });
+      // 2. ALIEN PHYSICS & JUMPING
+      if (g.isJumping) {
+        g.velocityY += 0.62; // gravity
+        g.alienY += g.velocityY;
+        if (g.alienY >= g.groundY) {
+          g.alienY = g.groundY;
+          g.velocityY = 0;
+          g.isJumping = false;
+        }
+      }
 
-    // Falling animation loop
-    const fallInterval = setInterval(() => {
-      currentY += 8;
-      // Target landing height based on current tower height
-      const targetY = Math.max(25, 78 - tower.length * 5.5);
+      // Handle Crying Timer (lasts ~900ms = 52 frames)
+      if (g.isCrying) {
+        g.cryingTimer--;
+        if (g.cryingTimer <= 0) {
+          g.isCrying = false;
+        }
+      }
 
-      if (currentY >= targetY) {
-        clearInterval(fallInterval);
-        setFallingStone(null);
+      // 3. OBSTACLES SPAWNING & UPDATE
+      if (!g.isCrying) {
+        g.nextObstacleTimer--;
+        if (g.nextObstacleTimer <= 0) {
+          const type = Math.random() < 0.5 ? 'crystal' : (Math.random() < 0.5 ? 'meteor' : 'barrier');
+          const width = type === 'meteor' ? 32 : (type === 'crystal' ? 24 : 26);
+          const height = type === 'meteor' ? 28 : (type === 'crystal' ? 38 : 42);
 
-        // Alignment check: diff against top stone center
-        const diff = Math.abs(currentX - topStone.x);
+          g.obstacles.push({
+            x: W + 20,
+            width,
+            height,
+            type,
+            passed: false
+          });
 
-        if (diff <= 18) {
-          const isPerfect = diff <= 7;
-          if (soundEnabled && soundEngine.playZenClink) {
-            soundEngine.playZenClink();
-          }
-
-          const pts = isPerfect ? 100 : 50;
-          const newScore = score + pts;
-          setScore(newScore);
-          if (onScoreUpdate) onScoreUpdate(newScore);
-
-          if (isPerfect) setPerfectCount(p => p + 1);
-
-          // Add to tower stack (exact same x coordinate!)
-          const newStone = {
-            x: currentX,
-            width: nextWidth,
-            height: 28,
-            color: nextColor
-          };
-
-          const newTower = [...tower, newStone];
-          setTower(newTower);
-
-          if (newTower.length > highTower) {
-            setHighTower(newTower.length);
-            localStorage.setItem('mindspring_tower_high', newTower.length.toString());
-          }
-
-          if (isPerfect) {
-            setFeedbackText('✨ Perfect Balance! Harmonic resonance (+100) ✨');
-            try {
-              confetti({ particleCount: 22, spread: 45 });
-            } catch (e) {}
-          } else {
-            setFeedbackText('🌿 Good Placement! Tower stable (+50)');
-          }
-        } else {
-          // Tumbled off into pond!
-          if (soundEnabled && soundEngine.playWaterSplash) {
-            soundEngine.playWaterSplash();
-          }
-          setFeedbackText('💧 Stone slipped into the calm pond! Keep going—drop the next stone.');
+          // Next obstacle spawn delay (ensures fair jumpable gaps!)
+          g.nextObstacleTimer = 65 + Math.floor(Math.random() * 45);
         }
 
-        isDroppingRef.current = false;
-      } else {
-        setFallingStone({
-          x: currentX,
-          y: currentY,
-          width: nextWidth,
-          color: nextColor
+        // Move obstacles
+        g.obstacles.forEach(obs => {
+          obs.x -= g.speed;
         });
-      }
-    }, 25);
-  };
 
-  // Keyboard shortcut (Spacebar)
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        dropStone();
+        // Filter offscreen obstacles
+        g.obstacles = g.obstacles.filter(obs => obs.x + obs.width > -40);
       }
+
+      // 4. DRAW OBSTACLES & CHECK HITBOX / LEAPS
+      const alienX = 85;
+      const alienW = 34;
+      const alienH = 40;
+      const alienTop = g.alienY - alienH;
+
+      g.obstacles.forEach(obs => {
+        const obsX = obs.x;
+        const obsY = g.groundY - obs.height;
+
+        // Draw obstacle based on type
+        if (obs.type === 'crystal') {
+          // Purple space crystal
+          ctx.fillStyle = '#a855f7';
+          ctx.beginPath();
+          ctx.moveTo(obsX + obs.width / 2, obsY);
+          ctx.lineTo(obsX + obs.width, obsY + obs.height);
+          ctx.lineTo(obsX, obsY + obs.height);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#c084fc';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (obs.type === 'meteor') {
+          // Orange spiky space rock
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.arc(obsX + obs.width / 2, obsY + obs.height / 2, obs.width / 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#fdba74';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else {
+          // Neon electric barrier
+          ctx.fillStyle = '#06b6d4';
+          ctx.fillRect(obsX + 4, obsY + 6, obs.width - 8, obs.height - 6);
+          // Glowing top orb
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(obsX + obs.width / 2, obsY + 6, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Check if safely cleared/jumped past
+        if (!obs.passed && obsX + obs.width < alienX - 10) {
+          obs.passed = true;
+          g.score += 25;
+          g.leaps += 1;
+          setScore(g.score);
+          setLeapsCount(g.leaps);
+          if (onScoreUpdate) onScoreUpdate(g.score);
+
+          if (g.score > highScore) {
+            setHighScore(g.score);
+            localStorage.setItem('mindspring_alien_high', g.score.toString());
+          }
+        }
+
+        // Collision Check (AABB with safe margins)
+        if (!g.isCrying) {
+          const hitX = alienX + 16 > obsX + 4 && alienX - 16 < obsX + obs.width - 4;
+          const hitY = g.alienY > obsY + 4 && alienTop < obsY + obs.height;
+
+          if (hitX && hitY) {
+            // HIT! Alien enters crying state
+            g.isCrying = true;
+            g.cryingTimer = 55; // ~900ms
+            if (g.soundEnabled && soundEngine.playBonkSound) {
+              soundEngine.playBonkSound();
+            }
+            // Push obstacle safely behind alien so it doesn't trigger again
+            obs.x = -100;
+          }
+        }
+      });
+
+      // 5. DRAW THE CUTE GREEN ALIEN
+      ctx.save();
+      ctx.translate(alienX, g.alienY);
+
+      // Body (Green dome)
+      ctx.fillStyle = '#22c55e'; // Lime green
+      ctx.beginPath();
+      ctx.ellipse(0, -18, 16, 20, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Antennae with glowing orb
+      ctx.strokeStyle = '#16a34a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-6, -34);
+      ctx.lineTo(-10, -44);
+      ctx.moveTo(6, -34);
+      ctx.lineTo(10, -44);
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8'; // Glowing cyan orb
+      ctx.beginPath();
+      ctx.arc(-10, -44, 4, 0, Math.PI * 2);
+      ctx.arc(10, -44, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes & Face
+      if (g.isCrying) {
+        // CRYING ALIEN: Big teardrops streaming & sad mouth
+        // Sad eyes
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(-6, -20, 4, Math.PI, 0); // upside-down curved eye
+        ctx.arc(6, -20, 4, Math.PI, 0);
+        ctx.stroke();
+
+        // Big blue anime tears fountains streaming down!
+        ctx.fillStyle = '#38bdf8';
+        const tearDropY = (g.frame * 2.5) % 18;
+        ctx.beginPath();
+        ctx.arc(-8, -14 + tearDropY, 4, 0, Math.PI * 2);
+        ctx.arc(8, -14 + tearDropY, 4, 0, Math.PI * 2);
+        ctx.arc(-14, -10 + tearDropY * 0.8, 3, 0, Math.PI * 2);
+        ctx.arc(14, -10 + tearDropY * 0.8, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sad open trembling mouth
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.ellipse(0, -9, 4, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Floating crying indicator
+        ctx.fillStyle = '#f87171';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('OUCH! 😭', 0, -52);
+      } else if (g.isJumping) {
+        // JUMPING ALIEN: Joyful happy eyes `^ ^`
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(-6, -20, 4, Math.PI, 0);
+        ctx.arc(6, -20, 4, Math.PI, 0);
+        ctx.stroke();
+
+        // Happy open smile
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(0, -11, 4, 0, Math.PI);
+        ctx.fill();
+      } else {
+        // RUNNING ALIEN: Normal curious shiny eyes
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.ellipse(-6, -20, 4.5, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(6, -20, 4.5, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye reflections
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-5, -22, 1.8, 0, Math.PI * 2);
+        ctx.arc(7, -22, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cute smile
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(0, -12, 3.5, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+      }
+
+      // Little Alien Feet / Stride animation
+      if (!g.isJumping && !g.isCrying) {
+        const legSwing = Math.sin(g.frame * 0.35) * 6;
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(-8 + legSwing, -3, 6, 5);
+        ctx.fillRect(2 - legSwing, -3, 6, 5);
+      } else {
+        // Feet tucked in jump
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(-7, -4, 5, 4);
+        ctx.fillRect(2, -4, 5, 4);
+      }
+
+      ctx.restore();
+
+      animId = requestAnimationFrame(loop);
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, swingPos, tower]);
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [gameState, highScore, onScoreUpdate]);
 
   // 1. IDLE SCREEN
   if (gameState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-6">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-stone-600 via-teal-700 to-emerald-800 text-white flex items-center justify-center text-4xl shadow-xl shadow-teal-500/20">
-          🪨
+        <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 via-teal-600 to-cyan-600 text-white flex items-center justify-center text-4xl shadow-xl shadow-emerald-500/20">
+          👽
         </div>
 
         <div className="space-y-1.5">
           <h3 className="text-2xl font-heading font-extrabold text-slate-800 dark:text-white">
-            Zen Stone Balancer
+            Cosmic Alien Runner
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
-            Stack peaceful Japanese river stones into a towering cairn. Practice presence, calm timing, and single-pointed focus.
+            Help your cute green alien leap over cosmic crystals and obstacles (Chrome Dino style)! If you bump into an obstacle, the alien will cry for a quick moment and keep running—<strong>the timer stays running without resetting</strong>!
           </p>
         </div>
 
-        {/* Duration selector */}
         <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700 text-xs">
           <span className="font-bold text-slate-500 px-2 flex items-center space-x-1">
             <Clock className="w-3.5 h-3.5" />
@@ -775,7 +983,7 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
               onClick={() => setDuration(s)}
               className={`px-3 py-1.5 rounded-xl font-bold transition ${
                 duration === s
-                  ? 'bg-teal-700 text-white shadow-md'
+                  ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
               }`}
             >
@@ -784,34 +992,32 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
           ))}
         </div>
 
-        {/* High score badge */}
         <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center space-x-1.5 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
           <Trophy className="w-3.5 h-3.5" />
-          <span>Highest Cairn Stacked: {highTower} Stones</span>
+          <span>Your Best Score: {highScore} Points</span>
         </div>
 
-        {/* Big Start Button */}
         <button
           onClick={handleStartGame}
-          className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-teal-700 via-emerald-600 to-cyan-600 hover:from-teal-800 hover:to-cyan-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-teal-600/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-teal-400/20"
+          className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-emerald-500/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-emerald-400/20"
         >
           <Play className="w-5 h-5 fill-current" />
-          <span>Start Stacking Stones</span>
+          <span>Start Alien Runner</span>
         </button>
       </div>
     );
   }
 
-  // 2. GAME OVER SCREEN
+  // 2. GAME OVER SCREEN (Results + Motivational Quote)
   if (gameState === 'gameover') {
     return (
       <GameResultCard
-        gameName="Zen Stone Balancer"
+        gameName="Cosmic Alien Runner"
         score={score}
         stats={[
-          { label: 'Tower Height', value: `${tower.length} Stones` },
-          { label: 'Perfect Placements', value: `${perfectCount} Stones` },
-          { label: 'Time Elapsed', value: `${duration}s` }
+          { label: 'Obstacles Cleared', value: `${leapsCount} Leaps` },
+          { label: 'Time Elapsed', value: `${duration}s` },
+          { label: 'Calm Focus Score', value: `${score} pts` }
         ]}
         onPlayAgain={handleStartGame}
         onSwitchGame={onSwitchGame}
@@ -824,14 +1030,13 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
   // 3. ACTIVE PLAYING VIEW
   return (
     <div className="flex flex-col h-full select-none">
-      {/* Header Bar */}
       <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
         <div className="flex items-center space-x-3">
           <span className="font-heading font-extrabold text-sm text-slate-800 dark:text-white">
-            Tower Height: <strong className="text-teal-600 dark:text-teal-400">{tower.length} Stones</strong>
+            Score: <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-base">{score}</strong>
           </span>
-          <span className="font-mono bg-teal-600 text-white font-bold px-2.5 py-0.5 rounded-lg">
-            Score: {score}
+          <span className="text-slate-500 font-semibold">
+            Leaps: {leapsCount}
           </span>
         </div>
 
@@ -855,82 +1060,33 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
         </div>
       </div>
 
-      {/* Main Pond / Stacking Arena */}
+      {/* 60FPS Native Canvas Runner Arena */}
       <div 
-        onClick={dropStone}
-        className="relative flex-1 min-h-[420px] bg-gradient-to-b from-slate-200 via-teal-100/50 to-emerald-200/70 dark:from-slate-950 dark:via-teal-950/30 dark:to-slate-900 rounded-2xl border border-teal-200 dark:border-slate-800 overflow-hidden my-3 cursor-pointer flex flex-col justify-between select-none touch-none"
+        onClick={triggerJump}
+        className="relative flex-1 min-h-[360px] rounded-2xl border border-emerald-500/30 overflow-hidden my-3 cursor-pointer select-none touch-none shadow-inner"
       >
-        {/* Pendulum Swinging Pebble at Top */}
-        <div className="relative w-full h-20 pt-2 pointer-events-none">
-          <div 
-            style={{ 
-              left: `${swingPos}%`,
-              transform: 'translateX(-50%)'
-            }}
-            className="absolute top-1 flex flex-col items-center transition-all duration-75"
-          >
-            <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-500" />
-            <div className="w-24 h-7 rounded-2xl bg-gradient-to-tr from-stone-600 to-stone-800 border-2 border-stone-400 shadow-xl flex items-center justify-center">
-              <span className="text-[9px] font-bold text-white tracking-widest uppercase">Pebble</span>
-            </div>
-          </div>
-        </div>
+        <canvas
+          ref={canvasRef}
+          width={720}
+          height={320}
+          className="w-full h-full block"
+        />
 
-        {/* Falling Stone Animation (if in flight) */}
-        {fallingStone && (
-          <div
-            style={{
-              left: `${fallingStone.x}%`,
-              top: `${fallingStone.y}%`,
-              width: `${fallingStone.width}px`,
-              height: '28px',
-              transform: 'translate(-50%, -50%)',
-              borderRadius: '16px 16px 12px 12px'
-            }}
-            className={`absolute bg-gradient-to-r ${fallingStone.color} border shadow-2xl z-20 pointer-events-none`}
-          />
-        )}
-
-        {/* Dynamic Feedback Banner */}
-        <div className="text-center z-10 px-4 pointer-events-none">
-          <span className="inline-block bg-white/85 dark:bg-slate-800/85 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm">
-            {feedbackText}
-          </span>
-        </div>
-
-        {/* Render Stacked Stones in Position */}
-        <div className="relative w-full h-56 flex items-end justify-center pointer-events-none pb-5">
-          {/* Water reflection ring */}
-          <div className="absolute bottom-3 w-80 h-7 rounded-full bg-teal-500/25 blur-md" />
-
-          {/* Render each stone using exact same left % coordinate */}
-          {tower.map((stone, idx) => (
-            <div
-              key={idx}
-              style={{
-                left: `${stone.x}%`,
-                bottom: `${idx * 27 + 16}px`,
-                width: `${stone.width}px`,
-                height: `${stone.height || 28}px`,
-                transform: 'translateX(-50%)',
-                borderRadius: '16px 16px 12px 12px'
-              }}
-              className={`absolute bg-gradient-to-r ${stone.color} border shadow-md flex items-center justify-center text-white/90 text-[10px] font-mono font-bold transition-all duration-200`}
-            >
-              <span>{idx === 0 ? 'Foundation' : `#${idx + 1}`}</span>
-            </div>
-          ))}
+        {/* Tap to jump guide overlay */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 pointer-events-none border border-white/20">
+          🚀 Press [Spacebar] or Tap Screen to Jump Obstacles!
         </div>
       </div>
 
-      {/* Control Buttons */}
+      {/* Jump Button for Mobile & Laptop Trackpad Users */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500 hidden sm:inline">Tap arena, press [Spacebar], or click Drop Stone:</span>
+        <span className="text-slate-500 hidden sm:inline">Timing is key! Hop over oncoming space crystals and rocks:</span>
         <button
-          onClick={dropStone}
-          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-extrabold rounded-xl shadow-md transition"
+          onClick={triggerJump}
+          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-emerald-500/25 transition active:scale-95 flex items-center justify-center space-x-2"
         >
-          Drop Stone 🪨
+          <Rocket className="w-4 h-4" />
+          <span>JUMP [Spacebar] 🚀</span>
         </button>
       </div>
     </div>
@@ -938,43 +1094,56 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
 }
 
 // ==========================================
-// 3. LOTUS CALM CATCH (Fluid Mouse & Touch Control)
+// 3. LOTUS CALM CATCH (60FPS Canvas, Zero Lag, Beautiful Glowing Shapes)
 // ==========================================
-const CATCH_ITEMS = [
-  { type: 'peace', label: '💧 Peace', pts: 15, isHazard: false, color: 'text-cyan-600' },
-  { type: 'joy', label: '🌸 Joy', pts: 25, isHazard: false, color: 'text-pink-600' },
-  { type: 'clarity', label: '⭐ Clarity', pts: 35, isHazard: false, color: 'text-amber-500' },
-  { type: 'focus', label: '💎 Focus', pts: 45, isHazard: false, color: 'text-emerald-600' },
-  { type: 'storm', label: '⚡ Stress', pts: -15, isHazard: true, color: 'text-slate-700' }
-];
-
 function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
-  const [gameState, setGameState] = useState('idle'); // 'idle' | 'playing' | 'gameover'
+  const [gameState, setGameState] = useState('idle');
   const [duration, setDuration] = useState(45);
   const [timeLeft, setTimeLeft] = useState(45);
-  const [basketX, setBasketX] = useState(50); // percentage (12 to 88)
-  const [fallingItems, setFallingItems] = useState([]);
-  const [catchPopups, setCatchPopups] = useState([]); // Visual catch floating text
   const [score, setScore] = useState(0);
   const [caughtCount, setCaughtCount] = useState(0);
   const [highScore, setHighScore] = useState(() => {
     return parseInt(localStorage.getItem('mindspring_lotus_high') || '0', 10);
   });
 
-  const nextId = useRef(1);
-  const arenaRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // Fast mutable game ref to guarantee ZERO React re-render lag
+  const gRef = useRef({
+    basketX: 360,
+    targetBasketX: 360,
+    items: [],
+    popups: [],
+    score: 0,
+    caught: 0,
+    frame: 0,
+    nextSpawnTimer: 35,
+    soundEnabled: true
+  });
+
+  gRef.current.soundEnabled = soundEnabled;
 
   const handleStartGame = () => {
     setScore(0);
     setCaughtCount(0);
     setTimeLeft(duration);
-    setFallingItems([]);
-    setCatchPopups([]);
-    setBasketX(50);
+
+    gRef.current = {
+      basketX: 360,
+      targetBasketX: 360,
+      items: [],
+      popups: [],
+      score: 0,
+      caught: 0,
+      frame: 0,
+      nextSpawnTimer: 25,
+      soundEnabled
+    };
+
     setGameState('playing');
   };
 
-  // Timer countdown
+  // Session timer
   useEffect(() => {
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
@@ -989,106 +1158,299 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Spawn falling items periodically
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const interval = setInterval(() => {
-      setFallingItems(prev => {
-        if (prev.length >= 7) return prev;
-        const isHazard = Math.random() < 0.22;
-        const itemType = isHazard 
-          ? CATCH_ITEMS[4] 
-          : CATCH_ITEMS[Math.floor(Math.random() * 4)];
+  // Pointer tracking across canvas (zero lag)
+  const handlePointer = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const clientX = (e.clientX - rect.left) * scaleX;
+    gRef.current.targetBasketX = Math.max(50, Math.min(canvas.width - 50, clientX));
+  };
 
-        const newItem = {
-          id: nextId.current++,
-          ...itemType,
-          x: 12 + Math.random() * 76,
-          y: -4,
-          speed: 1.1 + Math.random() * 0.9
-        };
-        return [...prev, newItem];
-      });
-    }, 700);
-    return () => clearInterval(interval);
-  }, [gameState]);
-
-  // Clean up floating catch text
-  useEffect(() => {
-    if (catchPopups.length === 0) return;
-    const timer = setTimeout(() => {
-      setCatchPopups(prev => prev.slice(1));
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [catchPopups]);
-
-  // Movement loop & collision detection
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const loop = setInterval(() => {
-      setFallingItems(prev => {
-        const remaining = [];
-        for (let item of prev) {
-          const nextY = item.y + item.speed;
-
-          // Check if caught in lotus basket (near bottom y: 78% to 90%)
-          if (nextY >= 78 && nextY <= 90 && Math.abs(item.x - basketX) <= 13) {
-            // Caught item!
-            if (item.isHazard) {
-              setScore(s => Math.max(0, s - 15));
-              setCatchPopups(p => [...p.slice(-3), { id: Date.now(), x: item.x, y: 80, text: '-15', color: 'text-rose-500' }]);
-            } else {
-              if (soundEnabled && soundEngine.playCatchSound) {
-                soundEngine.playCatchSound();
-              }
-              setCaughtCount(c => c + 1);
-              setScore(s => {
-                const ns = s + item.pts;
-                if (onScoreUpdate) onScoreUpdate(ns);
-                if (ns > highScore) {
-                  setHighScore(ns);
-                  localStorage.setItem('mindspring_lotus_high', ns.toString());
-                }
-                return ns;
-              });
-              setCatchPopups(p => [...p.slice(-3), { id: Date.now(), x: item.x, y: 80, text: `+${item.pts}`, color: 'text-emerald-500' }]);
-            }
-            continue; // caught, remove from falling
-          }
-
-          if (nextY < 105) {
-            remaining.push({ ...item, y: nextY });
-          }
-        }
-        return remaining;
-      });
-    }, 35);
-    return () => clearInterval(loop);
-  }, [gameState, basketX, soundEnabled, highScore, onScoreUpdate]);
-
-  // Keyboard navigation
+  // Arrow key controls
   useEffect(() => {
     if (gameState !== 'playing') return;
     const handleKeyDown = (e) => {
+      const g = gRef.current;
       if (e.key === 'ArrowLeft' || e.key === 'a') {
-        setBasketX(x => Math.max(12, x - 7));
+        g.targetBasketX = Math.max(50, g.targetBasketX - 35);
       } else if (e.key === 'ArrowRight' || e.key === 'd') {
-        setBasketX(x => Math.min(88, x + 7));
+        const canvas = canvasRef.current;
+        const maxW = canvas ? canvas.width - 50 : 670;
+        g.targetBasketX = Math.min(maxW, g.targetBasketX + 35);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState]);
 
-  // Pointer move handler (supports mouse move AND finger touch drag seamlessly)
-  const handlePointerTrack = (e) => {
-    if (gameState !== 'playing' || !arenaRef.current) return;
-    const rect = arenaRef.current.getBoundingClientRect();
-    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-    setBasketX(Math.max(12, Math.min(88, xPct)));
-  };
+  // 60FPS Canvas Render Loop (Zero Lag + Beautiful Geometry Shapes)
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId = null;
 
-  // 1. IDLE SCREEN
+    const loop = () => {
+      const g = gRef.current;
+      g.frame++;
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // Smooth basket linear interpolation (super buttery feel)
+      g.basketX += (g.targetBasketX - g.basketX) * 0.22;
+
+      // 1. RENDER STREAM BACKGROUND
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, '#0f172a'); // night sky
+      bgGrad.addColorStop(0.5, '#064e3b'); // tranquil river
+      bgGrad.addColorStop(1, '#022c22'); // deep emerald pond
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Water stream ripples
+      ctx.strokeStyle = 'rgba(45, 212, 191, 0.12)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        const yLine = 120 + i * 65 + Math.sin(g.frame * 0.03 + i) * 8;
+        ctx.beginPath();
+        ctx.moveTo(0, yLine);
+        ctx.bezierCurveTo(W * 0.33, yLine + 12, W * 0.66, yLine - 12, W, yLine);
+        ctx.stroke();
+      }
+
+      // 2. SPAWN BEAUTIFUL FALLING OBJECTS
+      g.nextSpawnTimer--;
+      if (g.nextSpawnTimer <= 0) {
+        const rand = Math.random();
+        let shape = 'star';
+        let pts = 30;
+        let color = '#fbbf24'; // golden
+        let isHazard = false;
+
+        if (rand < 0.28) {
+          shape = 'dewdrop'; // 💧 Dewdrop of Peace
+          pts = 15;
+          color = '#38bdf8'; // sky blue
+        } else if (rand < 0.52) {
+          shape = 'sakura'; // 🌸 Lotus Blossom
+          pts = 25;
+          color = '#f472b6'; // pink
+        } else if (rand < 0.74) {
+          shape = 'crystal'; // 💎 Emerald Gem
+          pts = 40;
+          color = '#34d399'; // emerald
+        } else if (rand < 0.88) {
+          shape = 'star'; // ⭐ Golden Star
+          pts = 35;
+          color = '#fbbf24';
+        } else {
+          shape = 'storm'; // ⚡ Storm cloud hazard
+          pts = -15;
+          color = '#94a3b8';
+          isHazard = true;
+        }
+
+        g.items.push({
+          x: 40 + Math.random() * (W - 80),
+          y: -20,
+          shape,
+          pts,
+          color,
+          isHazard,
+          rot: Math.random() * Math.PI * 2,
+          speed: 1.8 + Math.random() * 1.4
+        });
+
+        g.nextSpawnTimer = 34 + Math.floor(Math.random() * 22);
+      }
+
+      // 3. UPDATE & DRAW FALLING OBJECTS
+      const basketY = H - 50;
+      const basketW = 92;
+      const basketH = 26;
+
+      g.items.forEach(item => {
+        item.y += item.speed;
+        item.rot += 0.03;
+
+        // Draw Object
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate(item.rot);
+
+        if (item.shape === 'star') {
+          // 5-Point Shimmering Star
+          ctx.fillStyle = '#fde047';
+          ctx.shadowColor = '#facc15';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          for (let p = 0; p < 5; p++) {
+            ctx.lineTo(Math.cos((18 + p * 72) * Math.PI / 180) * 14, -Math.sin((18 + p * 72) * Math.PI / 180) * 14);
+            ctx.lineTo(Math.cos((54 + p * 72) * Math.PI / 180) * 6, -Math.sin((54 + p * 72) * Math.PI / 180) * 6);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else if (item.shape === 'dewdrop') {
+          // Glossy Water Dewdrop
+          ctx.fillStyle = '#38bdf8';
+          ctx.shadowColor = '#0284c7';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(0, 4, 10, 0, Math.PI);
+          ctx.lineTo(0, -12);
+          ctx.closePath();
+          ctx.fill();
+          // Specular shine
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-3, 2, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.shape === 'sakura') {
+          // 5-Petal Lotus / Sakura Blossom
+          ctx.fillStyle = '#f472b6';
+          ctx.shadowColor = '#ec4899';
+          ctx.shadowBlur = 8;
+          for (let petal = 0; petal < 5; petal++) {
+            ctx.beginPath();
+            ctx.ellipse(0, 7, 5, 8, (petal * 72) * Math.PI / 180, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = '#fef08a'; // Flower core
+          ctx.beginPath();
+          ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.shape === 'crystal') {
+          // Emerald Faceted Gem
+          ctx.fillStyle = '#34d399';
+          ctx.shadowColor = '#10b981';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.moveTo(0, -12);
+          ctx.lineTo(10, 0);
+          ctx.lineTo(0, 12);
+          ctx.lineTo(-10, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#a7f3d0';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else {
+          // Storm Cloud Hazard with Lightning
+          ctx.fillStyle = '#64748b';
+          ctx.shadowColor = '#334155';
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(-7, 0, 8, 0, Math.PI * 2);
+          ctx.arc(7, 0, 8, 0, Math.PI * 2);
+          ctx.arc(0, -6, 9, 0, Math.PI * 2);
+          ctx.fill();
+          // Lightning bolt
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.moveTo(-2, -3);
+          ctx.lineTo(3, 3);
+          ctx.lineTo(0, 4);
+          ctx.lineTo(2, 9);
+          ctx.lineTo(-3, 2);
+          ctx.lineTo(0, 1);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        // 4. CATCH COLLISION CHECK
+        if (item.y >= basketY - 14 && item.y <= basketY + 16 && Math.abs(item.x - g.basketX) < basketW / 2 + 8) {
+          // Caught!
+          if (item.isHazard) {
+            g.score = Math.max(0, g.score - 15);
+            g.popups.push({ x: item.x, y: basketY - 10, text: '-15', color: '#f87171', alpha: 1 });
+          } else {
+            g.score += item.pts;
+            g.caught += 1;
+            if (g.soundEnabled && soundEngine.playCatchSound) {
+              soundEngine.playCatchSound();
+            }
+            g.popups.push({ x: item.x, y: basketY - 10, text: `+${item.pts}`, color: '#34d399', alpha: 1 });
+          }
+
+          setScore(g.score);
+          setCaughtCount(g.caught);
+          if (onScoreUpdate) onScoreUpdate(g.score);
+
+          if (g.score > highScore) {
+            setHighScore(g.score);
+            localStorage.setItem('mindspring_lotus_high', g.score.toString());
+          }
+
+          item.y = 999; // mark caught to remove
+        }
+      });
+
+      // Filter off-screen items
+      g.items = g.items.filter(item => item.y < H + 30);
+
+      // 5. DRAW THE LOTUS BASKET
+      ctx.save();
+      ctx.translate(g.basketX, basketY);
+
+      // Water glow ring
+      ctx.fillStyle = 'rgba(45, 212, 191, 0.25)';
+      ctx.beginPath();
+      ctx.ellipse(0, 14, 52, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Green lily pad base
+      ctx.fillStyle = '#059669';
+      ctx.beginPath();
+      ctx.ellipse(0, 10, 48, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Golden Lotus Bowl
+      const lotusGrad = ctx.createLinearGradient(-45, 0, 45, 0);
+      lotusGrad.addColorStop(0, '#f59e0b'); // amber
+      lotusGrad.addColorStop(0.5, '#fb7185'); // rose pink
+      lotusGrad.addColorStop(1, '#14b8a6'); // teal
+      ctx.fillStyle = lotusGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, 42, 0.15, Math.PI - 0.15);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Lotus Bowl Label
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🌸 LOTUS', 0, 12);
+
+      ctx.restore();
+
+      // 6. DRAW FLOATING SCORE POPUPS
+      g.popups.forEach(pop => {
+        pop.y -= 1.2;
+        pop.alpha -= 0.035;
+        ctx.fillStyle = pop.color;
+        ctx.globalAlpha = Math.max(0, pop.alpha);
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pop.text, pop.x, pop.y);
+        ctx.globalAlpha = 1.0;
+      });
+      g.popups = g.popups.filter(pop => pop.alpha > 0);
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [gameState, highScore, onScoreUpdate]);
+
   if (gameState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-6">
@@ -1101,11 +1463,10 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
             Lotus Calm Catch
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
-            Glide your golden lotus basket across the reflecting stream to catch positive serenity droplets while dodging heavy exam clouds!
+            Glide your golden lotus basket across the tranquil stream at silky-smooth 60 FPS! Catch glowing stars, dewdrops, and pink lotus petals while dodging stormy lightning clouds.
           </p>
         </div>
 
-        {/* Duration selector */}
         <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700 text-xs">
           <span className="font-bold text-slate-500 px-2 flex items-center space-x-1">
             <Clock className="w-3.5 h-3.5" />
@@ -1126,13 +1487,11 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           ))}
         </div>
 
-        {/* High score badge */}
         <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center space-x-1.5 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
           <Trophy className="w-3.5 h-3.5" />
           <span>Your Best Score: {highScore} Points</span>
         </div>
 
-        {/* Big Start Button */}
         <button
           onClick={handleStartGame}
           className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-rose-600 via-pink-600 to-teal-600 hover:from-rose-700 hover:to-teal-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-rose-500/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-rose-400/20"
@@ -1144,16 +1503,15 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     );
   }
 
-  // 2. GAME OVER SCREEN
   if (gameState === 'gameover') {
     return (
       <GameResultCard
         gameName="Lotus Calm Catch"
         score={score}
         stats={[
-          { label: 'Serenity Drops', value: `${caughtCount} Caught` },
+          { label: 'Serenity Objects', value: `${caughtCount} Caught` },
           { label: 'Time Elapsed', value: `${duration}s` },
-          { label: 'Focus Score', value: `${score} pts` }
+          { label: 'Calm Focus Score', value: `${score} pts` }
         ]}
         onPlayAgain={handleStartGame}
         onSwitchGame={onSwitchGame}
@@ -1163,10 +1521,8 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     );
   }
 
-  // 3. ACTIVE PLAYING VIEW
   return (
     <div className="flex flex-col h-full select-none">
-      {/* Header Bar */}
       <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
         <div className="flex items-center space-x-3">
           <span className="font-mono bg-rose-600 text-white font-bold px-3 py-1 rounded-xl">
@@ -1197,78 +1553,43 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         </div>
       </div>
 
-      {/* Main Catch Canvas with Pointer Tracking */}
+      {/* 60FPS Native Canvas Catch Stream */}
       <div
-        ref={arenaRef}
-        onPointerDown={handlePointerTrack}
-        onPointerMove={handlePointerTrack}
-        className="relative flex-1 min-h-[420px] bg-gradient-to-b from-teal-50/70 via-cyan-50/50 to-emerald-100/70 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-2xl border border-teal-200 dark:border-slate-800 overflow-hidden my-3 cursor-ew-resize select-none touch-none"
+        onPointerMove={handlePointer}
+        onPointerDown={handlePointer}
+        className="relative flex-1 min-h-[380px] rounded-2xl border border-teal-500/30 overflow-hidden my-3 cursor-ew-resize select-none touch-none shadow-inner"
       >
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-slate-500 pointer-events-none">
-          Move your mouse, touch drag, or use [← / →] arrows to guide your lotus bowl!
-        </div>
+        <canvas
+          ref={canvasRef}
+          width={720}
+          height={380}
+          className="w-full h-full block"
+        />
 
-        {/* Falling items */}
-        {fallingItems.map(item => (
-          <div
-            key={item.id}
-            style={{
-              left: `${item.x}%`,
-              top: `${item.y}%`,
-              transform: 'translate(-50%, -50%)'
-            }}
-            className="absolute flex items-center space-x-1 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-xs font-bold pointer-events-none"
-          >
-            <span>{item.label}</span>
-          </div>
-        ))}
-
-        {/* Floating catch score popups */}
-        {catchPopups.map(popup => (
-          <div
-            key={popup.id}
-            style={{
-              left: `${popup.x}%`,
-              top: `${popup.y}%`,
-              transform: 'translate(-50%, -50%)'
-            }}
-            className={`absolute pointer-events-none font-extrabold text-sm ${popup.color} animate-fade-in z-20`}
-          >
-            {popup.text}
-          </div>
-        ))}
-
-        {/* Player Lotus Basket */}
-        <div
-          style={{ 
-            left: `${basketX}%`,
-            transform: 'translateX(-50%)'
-          }}
-          className="absolute bottom-4 flex flex-col items-center pointer-events-none transition-all duration-75"
-        >
-          <div className="w-28 h-10 rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-teal-400 p-1 shadow-2xl flex items-center justify-center border-2 border-white ring-4 ring-teal-400/20">
-            <span className="text-white text-xs font-extrabold uppercase drop-shadow flex items-center space-x-1">
-              <span>🌸</span>
-              <span>Lotus Basket</span>
-            </span>
-          </div>
-          <div className="w-20 h-2 bg-teal-500/20 rounded-full blur-sm mt-0.5" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 pointer-events-none border border-white/20">
+          🌸 Glide your mouse, finger, or [← / →] arrows to catch serenity objects!
         </div>
       </div>
 
-      {/* On-screen Left/Right arrow controls */}
+      {/* Touch / Arrow Navigation buttons */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500 hidden sm:inline">Dodge the dark lightning storm clouds!</span>
+        <span className="text-slate-500 hidden sm:inline">Dodge the stormy lightning clouds!</span>
         <div className="flex items-center space-x-2 w-full sm:w-auto justify-center">
           <button
-            onPointerDown={() => setBasketX(x => Math.max(12, x - 8))}
+            onPointerDown={() => {
+              gRef.current.targetBasketX = Math.max(50, gRef.current.targetBasketX - 55);
+            }}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1 shadow-sm transition active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Move Left</span>
           </button>
           <button
-            onPointerDown={() => setBasketX(x => Math.min(88, x + 8))}
+            onPointerDown={() => {
+              const canvas = canvasRef.current;
+              const maxW = canvas ? canvas.width - 50 : 670;
+              gRef.current.targetBasketX = Math.min(maxW, gRef.current.targetBasketX + 55);
+            }}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1 shadow-sm transition active:scale-95"
           >
             <span>Move Right</span>
@@ -1284,7 +1605,7 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
 // MAIN MINI-GAME STUDIO COMPONENT
 // ==========================================
 export default function MiniGameStudio({ onComplete }) {
-  const [selectedGame, setSelectedGame] = useState('bubbles'); // 'bubbles' | 'stones' | 'lotus'
+  const [selectedGame, setSelectedGame] = useState('bubbles'); // 'bubbles' | 'alien' | 'lotus'
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const games = [
@@ -1296,18 +1617,18 @@ export default function MiniGameStudio({ onComplete }) {
       badge: 'Popular Stress Buster'
     },
     {
-      id: 'stones',
-      name: 'Zen Stone Balancer',
-      icon: '🪨',
-      desc: 'Stack smooth river pebbles in peaceful equilibrium',
-      badge: 'Focus & Patience'
+      id: 'alien',
+      name: 'Cosmic Alien Runner',
+      icon: '👽',
+      desc: 'Spacebar jump past obstacles (Chrome Dino style)',
+      badge: 'Focus & Reflex'
     },
     {
       id: 'lotus',
       name: 'Lotus Calm Catch',
       icon: '🌸',
-      desc: 'Catch positive serenity drops with your lotus bowl',
-      badge: 'Reflex & Serenity'
+      desc: 'Glide to catch glowing stars & dewdrops at 60 FPS',
+      badge: '60 FPS Serenity'
     }
   ];
 
@@ -1325,7 +1646,7 @@ export default function MiniGameStudio({ onComplete }) {
               Stress-Buster Mini-Games
             </h2>
             <p className="text-xs text-purple-100">
-              Need a quick study reset? Choose a game below, press <strong>Start Game</strong>, and play for a focused, timed session. When the timer ends, receive your performance stats and an inspiring motivational quote!
+              Need a quick study reset? Choose a game below, click <strong>Start Game</strong>, and play for a focused, timed session. When the timer ends, celebrate with your performance stats and an inspiring motivational quote!
             </p>
           </div>
 
@@ -1394,12 +1715,12 @@ export default function MiniGameStudio({ onComplete }) {
         {selectedGame === 'bubbles' && (
           <BubblePopGame 
             soundEnabled={soundEnabled} 
-            onSwitchGame={() => setSelectedGame('stones')}
+            onSwitchGame={() => setSelectedGame('alien')}
             onComplete={onComplete}
           />
         )}
-        {selectedGame === 'stones' && (
-          <StoneStackerGame 
+        {selectedGame === 'alien' && (
+          <CosmicAlienRunner 
             soundEnabled={soundEnabled} 
             onSwitchGame={() => setSelectedGame('lotus')}
             onComplete={onComplete}
