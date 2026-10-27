@@ -22,7 +22,10 @@ import {
   Smile,
   RefreshCw,
   Rocket,
-  Wind
+  Wind,
+  X,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { soundEngine } from '../utils/audioSynthesizer';
 import confetti from 'canvas-confetti';
@@ -561,6 +564,51 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     return parseInt(localStorage.getItem('mindspring_alien_high') || '0', 10);
   });
 
+  // Mobile detection and fullscreen mode for mobile
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Resize listener to track mobile viewport
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Exit fullscreen helper
+  const handleExitFullscreen = () => {
+    setIsFullscreen(false);
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (e) {}
+  };
+
+  // Exit fullscreen automatically when session ends or resets
+  useEffect(() => {
+    if (gameState !== 'playing') {
+      handleExitFullscreen();
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    };
+  }, []);
+
   const canvasRef = useRef(null);
 
   // Fast mutable ref for 60fps rendering without React re-render lag
@@ -598,6 +646,16 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     setTreatsCount(0);
     setIsFartBoosting(false);
     setTimeLeft(duration);
+
+    // For mobile version: automatically shift to fullscreen for just the game
+    if (isMobile) {
+      setIsFullscreen(true);
+      try {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    }
 
     const stars = [];
     for (let i = 0; i < 40; i++) {
@@ -1260,6 +1318,14 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           <span>Your Best Score: {highScore} Points</span>
         </div>
 
+        {/* Mobile notice */}
+        {isMobile && (
+          <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 flex items-center space-x-1.5">
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>Mobile Ready: Automatically shifts to Fullscreen on Start</span>
+          </div>
+        )}
+
         <button
           onClick={handleStartGame}
           className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-emerald-500/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-emerald-400/20"
@@ -1289,6 +1355,103 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     );
   }
 
+  // =========================================================================
+  // MOBILE FULLSCREEN MODE (Activated on Start for Mobile Devices Only)
+  // Keeps laptop version 100% untouched while providing an immersive mobile arcade!
+  // =========================================================================
+  if (isMobile && isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col p-3 pb-5 safe-area-inset select-none touch-none overflow-hidden h-[100dvh]">
+        {/* Mobile Top HUD */}
+        <div className="flex items-center justify-between gap-2 bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-800 text-xs shadow-md">
+          <div className="flex items-center space-x-2.5">
+            <span className="font-heading font-extrabold text-xs text-slate-200">
+              Score: <strong className="text-emerald-400 font-mono text-sm">{score}</strong>
+            </span>
+
+            {/* Treat Claim Meter for Fart Boost */}
+            <div className={`flex items-center space-x-1 px-2.5 py-0.5 rounded-lg font-bold text-[11px] border transition ${
+              isFartBoosting 
+                ? 'bg-lime-500 text-white border-lime-400 animate-pulse shadow-sm shadow-lime-500/50'
+                : 'bg-slate-800 text-slate-300 border-slate-700'
+            }`}>
+              <span>🍩</span>
+              <span className="font-mono">{treatsCount}/5</span>
+              {isFartBoosting && <span className="text-[9px] uppercase tracking-wide">💨 BOOST!</span>}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <div className={`font-mono font-extrabold px-2.5 py-0.5 rounded-lg text-[11px] flex items-center space-x-1 ${
+              timeLeft <= 10 
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse' 
+                : 'bg-slate-800 text-slate-300 border border-slate-700'
+            }`}>
+              <Clock className="w-3 h-3" />
+              <span>{timeLeft}s</span>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleExitFullscreen();
+                setGameState('idle');
+              }}
+              className="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 active:scale-95 transition text-[11px] font-bold"
+              title="Exit Fullscreen Game"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Exit</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile 60FPS Canvas Viewport - Tap Anywhere to Jump */}
+        <div 
+          onClick={triggerJump}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            triggerJump();
+          }}
+          className="relative flex-1 w-full flex items-center justify-center my-2 rounded-2xl border border-emerald-500/30 overflow-hidden bg-slate-900/80 cursor-pointer select-none touch-none shadow-2xl"
+        >
+          <canvas
+            ref={canvasRef}
+            width={720}
+            height={320}
+            className="w-full h-full max-h-[62vh] object-contain block"
+          />
+
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold text-emerald-300 pointer-events-none border border-emerald-500/30 flex items-center space-x-1.5 shadow-lg whitespace-nowrap">
+            <span>👆 Tap anywhere on screen to Jump</span>
+          </div>
+        </div>
+
+        {/* Large Mobile Touch Jump Button */}
+        <div className="w-full">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerJump();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              triggerJump();
+            }}
+            className="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 active:from-emerald-600 active:to-cyan-600 text-white font-black text-sm sm:text-base rounded-2xl shadow-xl shadow-emerald-500/30 transition transform active:scale-98 flex items-center justify-center space-x-2 border border-emerald-400/40"
+          >
+            <Rocket className="w-4 h-4 fill-current" />
+            <span>TAP TO JUMP 🚀</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // LAPTOP / DESKTOP VERSION (100% UNCHANGED)
+  // =========================================================================
   return (
     <div className="flex flex-col h-full select-none">
       {/* Header Bar with Donut/Muffin Counter HUD */}
