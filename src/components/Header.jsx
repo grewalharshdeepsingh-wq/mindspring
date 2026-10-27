@@ -69,8 +69,8 @@ export default function Header({
 
       {/* Main navigation container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        {/* Brand identity */}
-        <div className="flex items-center justify-between">
+        {/* Brand identity & Highly Visible Quick Check-In placed upfront */}
+        <div className="flex items-center justify-between gap-4 w-full md:w-auto">
           <div 
             onClick={() => setActiveTab('plan')}
             className="flex items-center space-x-3 cursor-pointer group"
@@ -91,19 +91,21 @@ export default function Header({
                   MIND<span className="text-emerald-600 dark:text-emerald-400">SPRING</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
                 Personalised Student Wellness & Emotional Growth
               </p>
             </div>
           </div>
 
-          {/* Quick Check-In CTA for mobile */}
+          {/* Prominent Quick Check-In CTA Button - Highly visible upfront next to brand */}
           <button
             onClick={onOpenCheckIn}
-            className="md:hidden flex items-center space-x-1.5 bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow hover:bg-emerald-700 transition"
+            className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transform hover:-translate-y-0.5 active:translate-y-0 transition ring-2 ring-emerald-400/40 whitespace-nowrap"
+            title="Start your daily 30-second mood & stress check-in"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Check-In</span>
+            <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '4s' }} />
+            <span>Quick Check-In</span>
+            <span className="hidden sm:inline bg-white/20 text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">30s</span>
           </button>
         </div>
 
@@ -127,14 +129,6 @@ export default function Header({
               </button>
             );
           })}
-
-          <button
-            onClick={onOpenCheckIn}
-            className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-md hover:from-emerald-700 hover:to-teal-700 transition transform hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Quick Check-In</span>
-          </button>
         </div>
       </div>
     </header>
