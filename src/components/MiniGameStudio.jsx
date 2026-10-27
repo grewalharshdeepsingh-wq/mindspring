@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Gamepad2, 
   Sparkles, 
@@ -76,7 +76,6 @@ const MOTIVATIONAL_QUOTES = [
   }
 ];
 
-// Helper to pick random quote
 function getRandomQuote(excludeIndex = -1) {
   let index = Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length);
   if (index === excludeIndex) {
@@ -106,7 +105,7 @@ function GameResultCard({
     try {
       confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
     } catch (e) {}
-  }, []);
+  }, [soundEnabled]);
 
   const handleNextQuote = () => {
     setQuoteState(prev => getRandomQuote(prev.index));
@@ -210,7 +209,7 @@ function GameResultCard({
 }
 
 // ==========================================
-// 1. STRESS BUBBLE POP GAME
+// 1. STRESS BUBBLE POP GAME (Smooth & Reliable)
 // ==========================================
 const STRESS_WORDS = [
   'Exam Panic', 'Overthinking', 'Perfectionism', 'Self-Doubt', 
@@ -226,14 +225,14 @@ const BONUS_WORDS = [
 ];
 
 function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
-  // Game state: 'idle' | 'playing' | 'gameover'
-  const [gameState, setGameState] = useState('idle');
-  const [duration, setDuration] = useState(45); // seconds
+  const [gameState, setGameState] = useState('idle'); // 'idle' | 'playing' | 'gameover'
+  const [duration, setDuration] = useState(45);
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
   const [poppedCount, setPoppedCount] = useState(0);
   const [combo, setCombo] = useState(1);
   const [bubbles, setBubbles] = useState([]);
+  const [popEffects, setPopEffects] = useState([]); // Visual popping sparks
   const [highScore, setHighScore] = useState(() => {
     return parseInt(localStorage.getItem('mindspring_bubble_high') || '0', 10);
   });
@@ -247,25 +246,26 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     setPoppedCount(0);
     setCombo(1);
     setTimeLeft(duration);
-    
-    // Seed initial bubbles inside viewport
-    const initialBubbles = [];
-    for (let i = 0; i < 6; i++) {
+    setPopEffects([]);
+
+    // Seed 7 initial bubbles distributed vertically and horizontally
+    const seeded = [];
+    for (let i = 0; i < 7; i++) {
       const isBonus = Math.random() < 0.25;
       const bonusObj = isBonus ? BONUS_WORDS[Math.floor(Math.random() * BONUS_WORDS.length)] : null;
-      initialBubbles.push({
+      seeded.push({
         id: nextId.current++,
         text: isBonus ? bonusObj.text : STRESS_WORDS[Math.floor(Math.random() * STRESS_WORDS.length)],
         pts: isBonus ? bonusObj.pts : 15,
         isBonus,
-        color: isBonus ? bonusObj.color : 'from-indigo-500/85 to-purple-600/85',
-        x: 12 + (i % 3) * 32 + (Math.random() * 8 - 4),
-        y: 20 + Math.floor(i / 3) * 36 + Math.random() * 10,
+        color: isBonus ? bonusObj.color : 'from-indigo-500/90 to-purple-600/90',
+        x: 12 + (i % 4) * 23 + (Math.random() * 6 - 3),
+        y: 15 + Math.floor(i / 4) * 38 + Math.random() * 15,
         size: isBonus ? 78 : 84,
-        speed: 0.6 + Math.random() * 0.8
+        speed: 0.25 + Math.random() * 0.35 // gentle float
       });
     }
-    setBubbles(initialBubbles);
+    setBubbles(seeded);
     setGameState('playing');
   };
 
@@ -284,47 +284,51 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Spawn bubbles periodically while playing
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const interval = setInterval(() => {
-      setBubbles(prev => {
-        if (prev.length >= 9) return prev;
-        const isBonus = Math.random() < 0.28;
-        const bonusObj = isBonus ? BONUS_WORDS[Math.floor(Math.random() * BONUS_WORDS.length)] : null;
-        const newBubble = {
-          id: nextId.current++,
-          text: isBonus ? bonusObj.text : STRESS_WORDS[Math.floor(Math.random() * STRESS_WORDS.length)],
-          pts: isBonus ? bonusObj.pts : 15,
-          isBonus,
-          color: isBonus ? bonusObj.color : 'from-indigo-500/85 to-purple-600/85',
-          x: 10 + Math.random() * 75,
-          y: 100, // enter from bottom
-          size: isBonus ? 78 : 84,
-          speed: 0.8 + Math.random() * 1.2
-        };
-        return [...prev, newBubble];
-      });
-    }, 850);
-    return () => clearInterval(interval);
-  }, [gameState]);
-
-  // Movement animation loop while playing
+  // Movement loop for bubbles (smooth delta)
   useEffect(() => {
     if (gameState !== 'playing') return;
     const loop = setInterval(() => {
-      setBubbles(prev =>
-        prev
-          .map(b => ({ ...b, y: b.y - b.speed }))
-          .filter(b => b.y > -15)
-      );
-    }, 45);
+      setBubbles(prev => {
+        return prev
+          .map(b => {
+            const nextY = b.y - b.speed;
+            // If bubble leaves the top, recycle it from the bottom
+            if (nextY < -15) {
+              const isBonus = Math.random() < 0.25;
+              const bonusObj = isBonus ? BONUS_WORDS[Math.floor(Math.random() * BONUS_WORDS.length)] : null;
+              return {
+                ...b,
+                text: isBonus ? bonusObj.text : STRESS_WORDS[Math.floor(Math.random() * STRESS_WORDS.length)],
+                pts: isBonus ? bonusObj.pts : 15,
+                isBonus,
+                color: isBonus ? bonusObj.color : 'from-indigo-500/90 to-purple-600/90',
+                x: 10 + Math.random() * 78,
+                y: 105,
+                speed: 0.25 + Math.random() * 0.35
+              };
+            }
+            return { ...b, y: nextY };
+          });
+      });
+    }, 30);
     return () => clearInterval(loop);
   }, [gameState]);
 
-  // Bubble pop click handler
-  const popBubble = (bubble, e) => {
-    e.stopPropagation();
+  // Clean up floating pop score effects
+  useEffect(() => {
+    if (popEffects.length === 0) return;
+    const cleanup = setTimeout(() => {
+      setPopEffects(prev => prev.slice(1));
+    }, 700);
+    return () => clearTimeout(cleanup);
+  }, [popEffects]);
+
+  // Bubble pop handler (onPointerDown guarantees instant response on touch & mouse)
+  const handlePop = (bubble, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (soundEnabled && soundEngine.playPopSound) {
       soundEngine.playPopSound();
     }
@@ -335,29 +339,60 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     setPoppedCount(p => p + 1);
     if (onScoreUpdate) onScoreUpdate(newScore);
 
+    // Save high score
     if (newScore > highScore) {
       setHighScore(newScore);
       localStorage.setItem('mindspring_bubble_high', newScore.toString());
     }
 
+    // Add floating score pop effect
+    const newEffect = {
+      id: Date.now() + Math.random(),
+      x: bubble.x,
+      y: bubble.y,
+      text: `+${earned}`,
+      combo: combo > 1 ? `${combo}x` : null,
+      isBonus: bubble.isBonus
+    };
+    setPopEffects(prev => [...prev.slice(-4), newEffect]);
+
+    // Increase combo
     setCombo(c => Math.min(c + 1, 5));
     if (comboTimer.current) clearTimeout(comboTimer.current);
-    comboTimer.current = setTimeout(() => setCombo(1), 2200);
+    comboTimer.current = setTimeout(() => setCombo(1), 2000);
 
+    // Mini confetti on bonus pop
     if (bubble.isBonus) {
       try {
         confetti({
-          particleCount: 20,
-          spread: 45,
+          particleCount: 18,
+          spread: 40,
           origin: {
-            x: e.clientX ? e.clientX / window.innerWidth : 0.5,
-            y: e.clientY ? e.clientY / window.innerHeight : 0.5
+            x: bubble.x / 100,
+            y: Math.max(0.1, Math.min(0.9, bubble.y / 100))
           }
         });
       } catch (err) {}
     }
 
-    setBubbles(prev => prev.filter(b => b.id !== bubble.id));
+    // Replace the popped bubble with a new one at the bottom after a tiny delay
+    setBubbles(prev => {
+      const filtered = prev.filter(b => b.id !== bubble.id);
+      const isBonus = Math.random() < 0.28;
+      const bonusObj = isBonus ? BONUS_WORDS[Math.floor(Math.random() * BONUS_WORDS.length)] : null;
+      const respawn = {
+        id: nextId.current++,
+        text: isBonus ? bonusObj.text : STRESS_WORDS[Math.floor(Math.random() * STRESS_WORDS.length)],
+        pts: isBonus ? bonusObj.pts : 15,
+        isBonus,
+        color: isBonus ? bonusObj.color : 'from-indigo-500/90 to-purple-600/90',
+        x: 10 + Math.random() * 78,
+        y: 102,
+        size: isBonus ? 78 : 84,
+        speed: 0.25 + Math.random() * 0.35
+      };
+      return [...filtered, respawn];
+    });
   };
 
   // 1. IDLE SCREEN (Ready to start)
@@ -416,7 +451,7 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     );
   }
 
-  // 2. GAME OVER SCREEN (With Results & Motivational Quote)
+  // 2. GAME OVER SCREEN
   if (gameState === 'gameover') {
     return (
       <GameResultCard
@@ -438,7 +473,7 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
   // 3. ACTIVE PLAYING VIEW
   return (
     <div className="flex flex-col h-full select-none">
-      {/* Active Header Status Bar */}
+      {/* Active Status Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
         <div className="flex items-center space-x-3">
           <div className="bg-purple-600 text-white font-mono font-extrabold px-3 py-1 rounded-xl shadow-sm text-sm">
@@ -476,31 +511,55 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
       </div>
 
       {/* Floating Canvas Area */}
-      <div className="relative flex-1 min-h-[400px] bg-gradient-to-b from-sky-50/70 via-indigo-50/40 to-teal-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-2xl border border-purple-200 dark:border-slate-800 overflow-hidden my-3 shadow-inner cursor-pointer">
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold text-slate-500 pointer-events-none border">
-          🫧 Tap/click bubbles to pop them before they float away!
+      <div className="relative flex-1 min-h-[420px] bg-gradient-to-b from-sky-50/70 via-indigo-50/40 to-teal-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-2xl border border-purple-200 dark:border-slate-800 overflow-hidden my-3 shadow-inner select-none touch-none">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-slate-500 pointer-events-none border">
+          🫧 Tap or click bubbles to pop them before they float away!
         </div>
 
+        {/* Bubbles */}
         {bubbles.map(b => (
-          <button
+          <div
             key={b.id}
-            onClick={(e) => popBubble(b, e)}
+            onPointerDown={(e) => handlePop(b, e)}
             style={{
               left: `${b.x}%`,
               top: `${b.y}%`,
               width: `${b.size}px`,
               height: `${b.size}px`,
+              transform: 'translate(-50%, -50%)'
             }}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-tr ${b.color} text-white shadow-lg backdrop-blur-sm border-2 border-white/60 dark:border-white/30 flex flex-col items-center justify-center p-2 text-center transition-transform hover:scale-115 active:scale-90 animate-pulse-subtle`}
+            className={`absolute rounded-full bg-gradient-to-tr ${b.color} text-white shadow-xl backdrop-blur-sm border-2 border-white/70 dark:border-white/40 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-transform duration-75 active:scale-90 hover:scale-110`}
           >
-            <span className="text-[10px] font-bold leading-tight drop-shadow-sm line-clamp-2">
+            <span className="text-[10px] font-bold leading-tight drop-shadow-sm line-clamp-2 pointer-events-none">
               {b.text}
             </span>
-            <span className="text-[9px] opacity-90 mt-0.5 font-mono font-bold">
+            <span className="text-[9px] opacity-90 mt-0.5 font-mono font-bold pointer-events-none">
               +{b.pts}
             </span>
-            <div className="absolute top-1.5 left-2 w-3.5 h-2 bg-white/50 rounded-full rotate-[-30deg]" />
-          </button>
+            <div className="absolute top-1.5 left-2 w-3.5 h-2 bg-white/50 rounded-full rotate-[-30deg] pointer-events-none" />
+          </div>
+        ))}
+
+        {/* Floating pop score spark effects */}
+        {popEffects.map(effect => (
+          <div
+            key={effect.id}
+            style={{
+              left: `${effect.x}%`,
+              top: `${effect.y}%`,
+              transform: 'translate(-50%, -50%)'
+            }}
+            className="absolute pointer-events-none flex flex-col items-center animate-fade-in font-extrabold z-20"
+          >
+            <span className={`text-base ${effect.isBonus ? 'text-amber-400 drop-shadow' : 'text-emerald-500'} scale-125`}>
+              {effect.text}
+            </span>
+            {effect.combo && (
+              <span className="text-[10px] text-amber-500 uppercase tracking-widest bg-black/40 px-1.5 py-0.5 rounded-md">
+                {effect.combo} Combo
+              </span>
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -508,7 +567,7 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
 }
 
 // ==========================================
-// 2. ZEN STONE BALANCER GAME (TOWER OF CALM)
+// 2. ZEN STONE BALANCER (Accurate Placement & Drop Animation)
 // ==========================================
 const STONE_GRADIENTS = [
   'from-stone-500 to-stone-700 border-stone-400',
@@ -527,14 +586,16 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
     { x: 50, width: 140, height: 32, color: 'from-emerald-700 to-teal-900 border-emerald-500' }
   ]);
   const [swingPos, setSwingPos] = useState(50);
+  const [fallingStone, setFallingStone] = useState(null); // { x, y, width, color }
   const [score, setScore] = useState(0);
-  const [feedbackText, setFeedbackText] = useState('Press "Drop Stone" or [Spacebar] when centered!');
+  const [feedbackText, setFeedbackText] = useState('Tap "Drop Stone" or [Spacebar] when centered!');
   const [perfectCount, setPerfectCount] = useState(0);
   const [highTower, setHighTower] = useState(() => {
     return parseInt(localStorage.getItem('mindspring_tower_high') || '1', 10);
   });
 
   const swingDirection = useRef(1);
+  const isDroppingRef = useRef(false);
 
   const handleStartGame = () => {
     setTower([
@@ -543,6 +604,8 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
     setScore(0);
     setPerfectCount(0);
     setTimeLeft(duration);
+    setFallingStone(null);
+    isDroppingRef.current = false;
     setFeedbackText('Aim for the center and drop the river pebble!');
     setGameState('playing');
   };
@@ -562,12 +625,12 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Pendulum swing loop
+  // Smooth pendulum swing motion
   useEffect(() => {
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
       setSwingPos(prev => {
-        let next = prev + swingDirection.current * 1.5;
+        let next = prev + swingDirection.current * 1.35;
         if (next >= 78) {
           swingDirection.current = -1;
           next = 78;
@@ -581,62 +644,96 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Drop Stone Action
+  // Drop Stone Action (Clean falling animation + 100% position match)
   const dropStone = () => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || isDroppingRef.current) return;
+    isDroppingRef.current = true;
 
+    const currentX = swingPos;
     const topStone = tower[tower.length - 1];
-    const diff = Math.abs(swingPos - topStone.x);
+    const nextColor = STONE_GRADIENTS[tower.length % STONE_GRADIENTS.length];
+    const nextWidth = Math.max(68, topStone.width - 6);
 
-    if (diff <= 18) {
-      const isPerfect = diff <= 6;
-      if (soundEnabled && soundEngine.playZenClink) {
-        soundEngine.playZenClink();
-      }
+    // Initialise falling stone
+    let currentY = 12; // starts near top pendulum
+    setFallingStone({
+      x: currentX,
+      y: currentY,
+      width: nextWidth,
+      color: nextColor
+    });
 
-      const pts = isPerfect ? 100 : 50;
-      const newScore = score + pts;
-      setScore(newScore);
-      if (onScoreUpdate) onScoreUpdate(newScore);
+    // Falling animation loop
+    const fallInterval = setInterval(() => {
+      currentY += 8;
+      // Target landing height based on current tower height
+      const targetY = Math.max(25, 78 - tower.length * 5.5);
 
-      if (isPerfect) setPerfectCount(p => p + 1);
+      if (currentY >= targetY) {
+        clearInterval(fallInterval);
+        setFallingStone(null);
 
-      const nextWidth = Math.max(68, topStone.width - (isPerfect ? 0 : 8));
-      const nextColor = STONE_GRADIENTS[tower.length % STONE_GRADIENTS.length];
+        // Alignment check: diff against top stone center
+        const diff = Math.abs(currentX - topStone.x);
 
-      const newStone = {
-        x: swingPos,
-        width: nextWidth,
-        height: 28,
-        color: nextColor
-      };
+        if (diff <= 18) {
+          const isPerfect = diff <= 7;
+          if (soundEnabled && soundEngine.playZenClink) {
+            soundEngine.playZenClink();
+          }
 
-      const newTower = [...tower, newStone];
-      setTower(newTower);
+          const pts = isPerfect ? 100 : 50;
+          const newScore = score + pts;
+          setScore(newScore);
+          if (onScoreUpdate) onScoreUpdate(newScore);
 
-      if (newTower.length > highTower) {
-        setHighTower(newTower.length);
-        localStorage.setItem('mindspring_tower_high', newTower.length.toString());
-      }
+          if (isPerfect) setPerfectCount(p => p + 1);
 
-      if (isPerfect) {
-        setFeedbackText('✨ Perfect Balance! Harmonic alignment (+100) ✨');
-        try {
-          confetti({ particleCount: 20, spread: 45 });
-        } catch (e) {}
+          // Add to tower stack (exact same x coordinate!)
+          const newStone = {
+            x: currentX,
+            width: nextWidth,
+            height: 28,
+            color: nextColor
+          };
+
+          const newTower = [...tower, newStone];
+          setTower(newTower);
+
+          if (newTower.length > highTower) {
+            setHighTower(newTower.length);
+            localStorage.setItem('mindspring_tower_high', newTower.length.toString());
+          }
+
+          if (isPerfect) {
+            setFeedbackText('✨ Perfect Balance! Harmonic resonance (+100) ✨');
+            try {
+              confetti({ particleCount: 22, spread: 45 });
+            } catch (e) {}
+          } else {
+            setFeedbackText('🌿 Good Placement! Tower stable (+50)');
+          }
+        } else {
+          // Tumbled off into pond!
+          if (soundEnabled && soundEngine.playWaterSplash) {
+            soundEngine.playWaterSplash();
+          }
+          setFeedbackText('💧 Stone slipped into the calm pond! Keep going—drop the next stone.');
+        }
+
+        isDroppingRef.current = false;
       } else {
-        setFeedbackText('🌿 Good Placement! Tower stable (+50)');
+        setFallingStone({
+          x: currentX,
+          y: currentY,
+          width: nextWidth,
+          color: nextColor
+        });
       }
-    } else {
-      // Tumble off
-      if (soundEnabled && soundEngine.playWaterSplash) {
-        soundEngine.playWaterSplash();
-      }
-      setFeedbackText('💧 Stone tumbled into the calm pond! Keep going—drop the next stone.');
-    }
+    }, 25);
   };
 
-  // Keyboard shortcut (Spacebar to drop stone)
+  // Keyboard shortcut (Spacebar)
   useEffect(() => {
     if (gameState !== 'playing') return;
     const handleKeyDown = (e) => {
@@ -705,7 +802,7 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
     );
   }
 
-  // 2. GAME OVER SCREEN (Results + Motivational Quote)
+  // 2. GAME OVER SCREEN
   if (gameState === 'gameover') {
     return (
       <GameResultCard
@@ -758,16 +855,19 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
         </div>
       </div>
 
-      {/* Main Pond / Garden Stacking Viewport */}
+      {/* Main Pond / Stacking Arena */}
       <div 
         onClick={dropStone}
-        className="relative flex-1 min-h-[400px] bg-gradient-to-b from-slate-200 via-teal-100/50 to-emerald-200/70 dark:from-slate-950 dark:via-teal-950/30 dark:to-slate-900 rounded-2xl border border-teal-200 dark:border-slate-800 overflow-hidden my-3 cursor-pointer flex flex-col justify-between"
+        className="relative flex-1 min-h-[420px] bg-gradient-to-b from-slate-200 via-teal-100/50 to-emerald-200/70 dark:from-slate-950 dark:via-teal-950/30 dark:to-slate-900 rounded-2xl border border-teal-200 dark:border-slate-800 overflow-hidden my-3 cursor-pointer flex flex-col justify-between select-none touch-none"
       >
-        {/* Sky / Pendulum zone */}
-        <div className="relative w-full h-20 pt-3">
+        {/* Pendulum Swinging Pebble at Top */}
+        <div className="relative w-full h-20 pt-2 pointer-events-none">
           <div 
-            style={{ left: `${swingPos}%` }}
-            className="absolute top-2 -translate-x-1/2 flex flex-col items-center pointer-events-none transition-all duration-75"
+            style={{ 
+              left: `${swingPos}%`,
+              transform: 'translateX(-50%)'
+            }}
+            className="absolute top-1 flex flex-col items-center transition-all duration-75"
           >
             <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-500" />
             <div className="w-24 h-7 rounded-2xl bg-gradient-to-tr from-stone-600 to-stone-800 border-2 border-stone-400 shadow-xl flex items-center justify-center">
@@ -776,43 +876,56 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
           </div>
         </div>
 
+        {/* Falling Stone Animation (if in flight) */}
+        {fallingStone && (
+          <div
+            style={{
+              left: `${fallingStone.x}%`,
+              top: `${fallingStone.y}%`,
+              width: `${fallingStone.width}px`,
+              height: '28px',
+              transform: 'translate(-50%, -50%)',
+              borderRadius: '16px 16px 12px 12px'
+            }}
+            className={`absolute bg-gradient-to-r ${fallingStone.color} border shadow-2xl z-20 pointer-events-none`}
+          />
+        )}
+
         {/* Dynamic Feedback Banner */}
-        <div className="text-center z-10 px-4">
-          <span className="inline-block bg-white/80 dark:bg-slate-800/80 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="text-center z-10 px-4 pointer-events-none">
+          <span className="inline-block bg-white/85 dark:bg-slate-800/85 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm">
             {feedbackText}
           </span>
         </div>
 
-        {/* Stone Stack on the water pond base */}
-        <div className="relative w-full pb-6 flex flex-col items-center justify-end">
-          <div className="w-72 h-7 rounded-full bg-teal-500/20 blur-md mb-[-12px]" />
+        {/* Render Stacked Stones in Position */}
+        <div className="relative w-full h-56 flex items-end justify-center pointer-events-none pb-5">
+          {/* Water reflection ring */}
+          <div className="absolute bottom-3 w-80 h-7 rounded-full bg-teal-500/25 blur-md" />
 
-          <div className="flex flex-col-reverse items-center">
-            {tower.map((stone, idx) => (
-              <div
-                key={idx}
-                style={{
-                  width: `${stone.width}px`,
-                  height: `${stone.height}px`,
-                  marginLeft: `${(stone.x - 50) * 2.6}px`,
-                  borderRadius: '16px 16px 12px 12px'
-                }}
-                className={`my-[-2px] bg-gradient-to-r ${stone.color} border shadow-md flex items-center justify-center text-white/90 text-[10px] font-mono font-bold transition-all duration-300`}
-              >
-                <span>#{idx + 1}</span>
-              </div>
-            ))}
-          </div>
-
-          <span className="text-[10px] text-slate-500 font-semibold mt-1">
-            🌱 Foundation River Rock
-          </span>
+          {/* Render each stone using exact same left % coordinate */}
+          {tower.map((stone, idx) => (
+            <div
+              key={idx}
+              style={{
+                left: `${stone.x}%`,
+                bottom: `${idx * 27 + 16}px`,
+                width: `${stone.width}px`,
+                height: `${stone.height || 28}px`,
+                transform: 'translateX(-50%)',
+                borderRadius: '16px 16px 12px 12px'
+              }}
+              className={`absolute bg-gradient-to-r ${stone.color} border shadow-md flex items-center justify-center text-white/90 text-[10px] font-mono font-bold transition-all duration-200`}
+            >
+              <span>{idx === 0 ? 'Foundation' : `#${idx + 1}`}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Control Buttons */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500 hidden sm:inline">Click arena, press [Spacebar], or tap "Drop Stone":</span>
+        <span className="text-slate-500 hidden sm:inline">Tap arena, press [Spacebar], or click Drop Stone:</span>
         <button
           onClick={dropStone}
           className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-extrabold rounded-xl shadow-md transition"
@@ -825,7 +938,7 @@ function StoneStackerGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplet
 }
 
 // ==========================================
-// 3. LOTUS CALM CATCH (CATCHING PEACE)
+// 3. LOTUS CALM CATCH (Fluid Mouse & Touch Control)
 // ==========================================
 const CATCH_ITEMS = [
   { type: 'peace', label: '💧 Peace', pts: 15, isHazard: false, color: 'text-cyan-600' },
@@ -839,8 +952,9 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
   const [gameState, setGameState] = useState('idle'); // 'idle' | 'playing' | 'gameover'
   const [duration, setDuration] = useState(45);
   const [timeLeft, setTimeLeft] = useState(45);
-  const [basketX, setBasketX] = useState(50); // percentage (10 to 90)
+  const [basketX, setBasketX] = useState(50); // percentage (12 to 88)
   const [fallingItems, setFallingItems] = useState([]);
+  const [catchPopups, setCatchPopups] = useState([]); // Visual catch floating text
   const [score, setScore] = useState(0);
   const [caughtCount, setCaughtCount] = useState(0);
   const [highScore, setHighScore] = useState(() => {
@@ -848,12 +962,14 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
   });
 
   const nextId = useRef(1);
+  const arenaRef = useRef(null);
 
   const handleStartGame = () => {
     setScore(0);
     setCaughtCount(0);
     setTimeLeft(duration);
     setFallingItems([]);
+    setCatchPopups([]);
     setBasketX(50);
     setGameState('playing');
   };
@@ -888,14 +1004,23 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           id: nextId.current++,
           ...itemType,
           x: 12 + Math.random() * 76,
-          y: -5,
-          speed: 1.2 + Math.random() * 1.4
+          y: -4,
+          speed: 1.1 + Math.random() * 0.9
         };
         return [...prev, newItem];
       });
-    }, 750);
+    }, 700);
     return () => clearInterval(interval);
   }, [gameState]);
+
+  // Clean up floating catch text
+  useEffect(() => {
+    if (catchPopups.length === 0) return;
+    const timer = setTimeout(() => {
+      setCatchPopups(prev => prev.slice(1));
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [catchPopups]);
 
   // Movement loop & collision detection
   useEffect(() => {
@@ -906,11 +1031,12 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         for (let item of prev) {
           const nextY = item.y + item.speed;
 
-          // Check if caught in lotus basket (near bottom y: 82% to 92%)
-          if (nextY >= 82 && nextY <= 92 && Math.abs(item.x - basketX) < 14) {
-            // Collision caught!
+          // Check if caught in lotus basket (near bottom y: 78% to 90%)
+          if (nextY >= 78 && nextY <= 90 && Math.abs(item.x - basketX) <= 13) {
+            // Caught item!
             if (item.isHazard) {
               setScore(s => Math.max(0, s - 15));
+              setCatchPopups(p => [...p.slice(-3), { id: Date.now(), x: item.x, y: 80, text: '-15', color: 'text-rose-500' }]);
             } else {
               if (soundEnabled && soundEngine.playCatchSound) {
                 soundEngine.playCatchSound();
@@ -925,8 +1051,9 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
                 }
                 return ns;
               });
+              setCatchPopups(p => [...p.slice(-3), { id: Date.now(), x: item.x, y: 80, text: `+${item.pts}`, color: 'text-emerald-500' }]);
             }
-            continue; // caught, so remove from falling
+            continue; // caught, remove from falling
           }
 
           if (nextY < 105) {
@@ -935,30 +1062,30 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         }
         return remaining;
       });
-    }, 40);
+    }, 35);
     return () => clearInterval(loop);
-  }, [gameState, basketX, soundEnabled, highScore]);
+  }, [gameState, basketX, soundEnabled, highScore, onScoreUpdate]);
 
   // Keyboard navigation
   useEffect(() => {
     if (gameState !== 'playing') return;
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowLeft' || e.key === 'a') {
-        setBasketX(x => Math.max(10, x - 6));
+        setBasketX(x => Math.max(12, x - 7));
       } else if (e.key === 'ArrowRight' || e.key === 'd') {
-        setBasketX(x => Math.min(90, x + 6));
+        setBasketX(x => Math.min(88, x + 7));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState]);
 
-  // Mouse move tracking
-  const handleMouseMove = (e) => {
-    if (gameState !== 'playing') return;
-    const rect = e.currentTarget.getBoundingClientRect();
+  // Pointer move handler (supports mouse move AND finger touch drag seamlessly)
+  const handlePointerTrack = (e) => {
+    if (gameState !== 'playing' || !arenaRef.current) return;
+    const rect = arenaRef.current.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-    setBasketX(Math.max(10, Math.min(90, xPct)));
+    setBasketX(Math.max(12, Math.min(88, xPct)));
   };
 
   // 1. IDLE SCREEN
@@ -1017,7 +1144,7 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     );
   }
 
-  // 2. GAME OVER SCREEN (Results + Motivational Quote)
+  // 2. GAME OVER SCREEN
   if (gameState === 'gameover') {
     return (
       <GameResultCard
@@ -1070,13 +1197,15 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         </div>
       </div>
 
-      {/* Main Catch Canvas */}
+      {/* Main Catch Canvas with Pointer Tracking */}
       <div
-        onMouseMove={handleMouseMove}
-        className="relative flex-1 min-h-[400px] bg-gradient-to-b from-teal-50/70 via-cyan-50/50 to-emerald-100/70 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-2xl border border-teal-200 dark:border-slate-800 overflow-hidden my-3 cursor-ew-resize"
+        ref={arenaRef}
+        onPointerDown={handlePointerTrack}
+        onPointerMove={handlePointerTrack}
+        className="relative flex-1 min-h-[420px] bg-gradient-to-b from-teal-50/70 via-cyan-50/50 to-emerald-100/70 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-2xl border border-teal-200 dark:border-slate-800 overflow-hidden my-3 cursor-ew-resize select-none touch-none"
       >
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-slate-500 pointer-events-none">
-          Move your mouse, touch, or use [← / →] arrows to guide your lotus bowl!
+          Move your mouse, touch drag, or use [← / →] arrows to guide your lotus bowl!
         </div>
 
         {/* Falling items */}
@@ -1086,42 +1215,61 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
             style={{
               left: `${item.x}%`,
               top: `${item.y}%`,
+              transform: 'translate(-50%, -50%)'
             }}
-            className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center space-x-1 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-md border border-slate-200 dark:border-slate-700 text-xs font-bold pointer-events-none"
+            className="absolute flex items-center space-x-1 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-xs font-bold pointer-events-none"
           >
             <span>{item.label}</span>
           </div>
         ))}
 
+        {/* Floating catch score popups */}
+        {catchPopups.map(popup => (
+          <div
+            key={popup.id}
+            style={{
+              left: `${popup.x}%`,
+              top: `${popup.y}%`,
+              transform: 'translate(-50%, -50%)'
+            }}
+            className={`absolute pointer-events-none font-extrabold text-sm ${popup.color} animate-fade-in z-20`}
+          >
+            {popup.text}
+          </div>
+        ))}
+
         {/* Player Lotus Basket */}
         <div
-          style={{ left: `${basketX}%` }}
-          className="absolute bottom-4 -translate-x-1/2 flex flex-col items-center pointer-events-none transition-all duration-75"
+          style={{ 
+            left: `${basketX}%`,
+            transform: 'translateX(-50%)'
+          }}
+          className="absolute bottom-4 flex flex-col items-center pointer-events-none transition-all duration-75"
         >
-          <div className="w-24 h-10 rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-teal-400 p-1 shadow-2xl flex items-center justify-center border-2 border-white ring-4 ring-teal-400/20">
+          <div className="w-28 h-10 rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-teal-400 p-1 shadow-2xl flex items-center justify-center border-2 border-white ring-4 ring-teal-400/20">
             <span className="text-white text-xs font-extrabold uppercase drop-shadow flex items-center space-x-1">
               <span>🌸</span>
-              <span>Lotus</span>
+              <span>Lotus Basket</span>
             </span>
           </div>
-          <div className="w-16 h-2 bg-teal-500/20 rounded-full blur-sm mt-0.5" />
+          <div className="w-20 h-2 bg-teal-500/20 rounded-full blur-sm mt-0.5" />
         </div>
       </div>
 
       {/* On-screen Left/Right arrow controls */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500 hidden sm:inline">Dodge the dark lightning clouds!</span>
+        <span className="text-slate-500 hidden sm:inline">Dodge the dark lightning storm clouds!</span>
         <div className="flex items-center space-x-2 w-full sm:w-auto justify-center">
           <button
-            onClick={() => setBasketX(x => Math.max(10, x - 12))}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1"
+            onPointerDown={() => setBasketX(x => Math.max(12, x - 8))}
+            className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1 shadow-sm transition active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Move Left</span>
           </button>
           <button
-            onClick={() => setBasketX(x => Math.min(90, x + 12))}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1"
+            onPointerDown={() => setBasketX(x => Math.min(88, x + 8))}
+            className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1 shadow-sm transition active:scale-95"
           >
             <span>Move Right</span>
             <ArrowRight className="w-4 h-4" />
@@ -1242,7 +1390,7 @@ export default function MiniGameStudio({ onComplete }) {
       </div>
 
       {/* Active Game Viewport Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6 min-h-[440px]">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6 min-h-[460px]">
         {selectedGame === 'bubbles' && (
           <BubblePopGame 
             soundEnabled={soundEnabled} 

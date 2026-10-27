@@ -29,8 +29,10 @@ class SoundEngine {
       this.masterGain.gain.setValueAtTime(0.8, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      try {
+        this.ctx.resume().catch(() => {});
+      } catch (e) {}
     }
   }
 
