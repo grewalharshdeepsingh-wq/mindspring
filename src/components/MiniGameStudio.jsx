@@ -21,7 +21,8 @@ import {
   Compass,
   Smile,
   RefreshCw,
-  Rocket
+  Rocket,
+  Wind
 } from 'lucide-react';
 import { soundEngine } from '../utils/audioSynthesizer';
 import confetti from 'canvas-confetti';
@@ -114,7 +115,7 @@ function GameResultCard({
 
   return (
     <div className="flex flex-col items-center justify-center p-6 text-center animate-fade-in max-w-xl mx-auto space-y-5">
-      {/* Trophy & Congrats Header */}
+      {/* Trophy Header */}
       <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 to-yellow-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30 animate-bounce">
         <Trophy className="w-8 h-8" />
       </div>
@@ -546,7 +547,7 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
 }
 
 // ==========================================
-// 2. COSMIC ALIEN RUNNER (Chrome Dino Style, Crying Alien on Hit)
+// 2. COSMIC ALIEN RUNNER (Muffins/Donuts + Tasty Laugh + Fart Boost Flying!)
 // ==========================================
 function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
   const [gameState, setGameState] = useState('idle'); // 'idle' | 'playing' | 'gameover'
@@ -554,24 +555,35 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
   const [leapsCount, setLeapsCount] = useState(0);
+  const [treatsCount, setTreatsCount] = useState(0);
+  const [isFartBoosting, setIsFartBoosting] = useState(false);
   const [highScore, setHighScore] = useState(() => {
     return parseInt(localStorage.getItem('mindspring_alien_high') || '0', 10);
   });
 
   const canvasRef = useRef(null);
 
-  // Mutable game physics & state ref (avoids React re-render lag)
+  // Fast mutable ref for 60fps rendering without React re-render lag
   const gRef = useRef({
     alienY: 0,
+    targetY: 175,
     velocityY: 0,
     isJumping: false,
     isCrying: false,
     cryingTimer: 0,
-    frame: 0,
-    groundY: 175,
+    // Muffins / Donuts claim & Fart Boost
+    treatsCount: 0,
+    isFartBoosting: false,
+    fartBoostTimer: 0,
+    tastySpeechTimer: 0,
+    fartPuffs: [], // Animated gas clouds
+    treats: [], // Floating donuts & muffins
     obstacles: [],
     stars: [],
-    nextObstacleTimer: 60,
+    frame: 0,
+    groundY: 175,
+    nextObstacleTimer: 50,
+    nextTreatTimer: 65,
     score: 0,
     leaps: 0,
     soundEnabled: true,
@@ -583,9 +595,10 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
   const handleStartGame = () => {
     setScore(0);
     setLeapsCount(0);
+    setTreatsCount(0);
+    setIsFartBoosting(false);
     setTimeLeft(duration);
 
-    // Initialise stars for background
     const stars = [];
     for (let i = 0; i < 40; i++) {
       stars.push({
@@ -598,15 +611,23 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
 
     gRef.current = {
       alienY: 175,
+      targetY: 175,
       velocityY: 0,
       isJumping: false,
       isCrying: false,
       cryingTimer: 0,
-      frame: 0,
-      groundY: 175,
+      treatsCount: 0,
+      isFartBoosting: false,
+      fartBoostTimer: 0,
+      tastySpeechTimer: 0,
+      fartPuffs: [],
+      treats: [],
       obstacles: [],
       stars,
+      frame: 0,
+      groundY: 175,
       nextObstacleTimer: 50,
+      nextTreatTimer: 45,
       score: 0,
       leaps: 0,
       soundEnabled,
@@ -616,18 +637,18 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     setGameState('playing');
   };
 
-  // Jump trigger (Spacebar, Click, or Touch)
+  // Jump Action
   const triggerJump = () => {
     const g = gRef.current;
-    if (gameState !== 'playing' || g.isJumping || g.isCrying) return;
+    if (gameState !== 'playing' || g.isJumping || g.isCrying || g.isFartBoosting) return;
     g.isJumping = true;
-    g.velocityY = -12.4;
+    g.velocityY = -12.5;
     if (g.soundEnabled && soundEngine.playJumpSound) {
       soundEngine.playJumpSound();
     }
   };
 
-  // Global keydown listener for Spacebar / ArrowUp
+  // Spacebar / ArrowUp listener
   useEffect(() => {
     if (gameState !== 'playing') return;
     const handleKeyDown = (e) => {
@@ -640,7 +661,7 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState]);
 
-  // Session timer: KEEPS RUNNING WITHOUT RESETTING EVEN WHEN ALIEN HITS OBSTACLE!
+  // Session timer (KEEPS RUNNING WITHOUT RESETTING WHEN HIT!)
   useEffect(() => {
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
@@ -671,39 +692,39 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
       g.groundY = H - 45;
 
       // 1. CLEAR & BACKGROUND
-      ctx.fillStyle = '#0f172a'; // dark slate cosmic
+      ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, W, H);
 
-      // Distant nebulas
       const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, '#1e1b4b'); // indigo deep
+      grad.addColorStop(0, '#1e1b4b');
       grad.addColorStop(0.7, '#0f172a');
-      grad.addColorStop(1, '#022c22'); // subtle teal ground aura
+      grad.addColorStop(1, g.isFartBoosting ? '#14532d' : '#022c22');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
       // Starfield
       g.stars.forEach(st => {
         if (!g.isCrying) {
-          st.x -= 0.6;
+          st.x -= g.isFartBoosting ? 1.4 : 0.6;
           if (st.x < 0) st.x = W + Math.random() * 20;
         }
         ctx.fillStyle = `rgba(255, 255, 255, ${st.alpha})`;
         ctx.fillRect(st.x, st.y, st.size, st.size);
       });
 
-      // Neon horizon ground line
-      ctx.strokeStyle = '#10b981';
+      // Neon horizon line
+      ctx.strokeStyle = g.isFartBoosting ? '#a3e635' : '#10b981';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(0, g.groundY);
       ctx.lineTo(W, g.groundY);
       ctx.stroke();
 
-      // Scrolling terrain dashes
-      ctx.strokeStyle = '#059669';
+      // Terrain scrolling dashes
+      ctx.strokeStyle = g.isFartBoosting ? '#65a30d' : '#059669';
       ctx.lineWidth = 2;
-      const dashOffset = (g.frame * g.speed) % 36;
+      const speedMult = g.isFartBoosting ? 1.5 : 1.0;
+      const dashOffset = (g.frame * g.speed * speedMult) % 36;
       for (let x = -dashOffset; x < W; x += 36) {
         ctx.beginPath();
         ctx.moveTo(x, g.groundY + 8);
@@ -711,8 +732,35 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         ctx.stroke();
       }
 
-      // 2. ALIEN PHYSICS & JUMPING
-      if (g.isJumping) {
+      // 2. FART BOOST & FLYING PHYSICS
+      if (g.isFartBoosting) {
+        g.fartBoostTimer--;
+        // Alien flies smoothly high in the sky (soaring at groundY - 75)
+        const targetFlyY = g.groundY - 78 + Math.sin(g.frame * 0.18) * 8;
+        g.alienY += (targetFlyY - g.alienY) * 0.2;
+        g.isJumping = false;
+        g.velocityY = 0;
+
+        // Spawn puffy green/yellow fart clouds from behind the alien!
+        if (g.frame % 3 === 0) {
+          g.fartPuffs.push({
+            x: 65,
+            y: g.alienY - 10 + (Math.random() * 10 - 5),
+            size: 10 + Math.random() * 8,
+            alpha: 0.85,
+            vx: -(4.5 + Math.random() * 2),
+            vy: (Math.random() - 0.5) * 1.5,
+            color: Math.random() < 0.6 ? '#84cc16' : '#eab308' // Lime or Yellow-green gas!
+          });
+        }
+
+        // Fart boost expiration
+        if (g.fartBoostTimer <= 0) {
+          g.isFartBoosting = false;
+          setIsFartBoosting(false);
+        }
+      } else if (g.isJumping) {
+        // Normal Jump physics
         g.velocityY += 0.62; // gravity
         g.alienY += g.velocityY;
         if (g.alienY >= g.groundY) {
@@ -720,9 +768,27 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           g.velocityY = 0;
           g.isJumping = false;
         }
+      } else {
+        g.alienY = g.groundY;
       }
 
-      // Handle Crying Timer (lasts ~900ms = 52 frames)
+      // Update & Draw Fart Propulsion Gas Clouds
+      g.fartPuffs.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.size += 0.45;
+        p.alpha -= 0.025;
+
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+      });
+      g.fartPuffs = g.fartPuffs.filter(p => p.alpha > 0);
+
+      // Handle Crying Timer
       if (g.isCrying) {
         g.cryingTimer--;
         if (g.cryingTimer <= 0) {
@@ -730,7 +796,12 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         }
       }
 
-      // 3. OBSTACLES SPAWNING & UPDATE
+      // Handle "Tasty! 😋" Speech Bubble Timer
+      if (g.tastySpeechTimer > 0) {
+        g.tastySpeechTimer--;
+      }
+
+      // 3. SPAWN & MOVE OBSTACLES
       if (!g.isCrying) {
         g.nextObstacleTimer--;
         if (g.nextObstacleTimer <= 0) {
@@ -746,32 +817,166 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
             passed: false
           });
 
-          // Next obstacle spawn delay (ensures fair jumpable gaps!)
           g.nextObstacleTimer = 65 + Math.floor(Math.random() * 45);
         }
 
-        // Move obstacles
+        const currentSpeed = g.isFartBoosting ? g.speed * 1.5 : g.speed;
         g.obstacles.forEach(obs => {
-          obs.x -= g.speed;
+          obs.x -= currentSpeed;
         });
-
-        // Filter offscreen obstacles
         g.obstacles = g.obstacles.filter(obs => obs.x + obs.width > -40);
       }
 
-      // 4. DRAW OBSTACLES & CHECK HITBOX / LEAPS
+      // 4. SPAWN & MOVE MUFFINS / DONUTS AT HEIGHT
+      if (!g.isCrying) {
+        g.nextTreatTimer--;
+        if (g.nextTreatTimer <= 0) {
+          const treatType = Math.random() < 0.5 ? 'donut' : 'muffin';
+          // Elevated at jump height (so alien must jump to claim it!)
+          const treatY = g.groundY - 55 - Math.random() * 30;
+
+          g.treats.push({
+            x: W + 25,
+            y: treatY,
+            type: treatType,
+            width: 26,
+            height: 26,
+            collected: false
+          });
+
+          g.nextTreatTimer = 55 + Math.floor(Math.random() * 50);
+        }
+
+        const currentSpeed = g.isFartBoosting ? g.speed * 1.5 : g.speed;
+        g.treats.forEach(t => {
+          t.x -= currentSpeed;
+        });
+        g.treats = g.treats.filter(t => t.x > -40);
+      }
+
       const alienX = 85;
       const alienW = 34;
       const alienH = 40;
       const alienTop = g.alienY - alienH;
 
+      // 5. DRAW & CHECK MUFFIN/DONUT CLAIMS
+      g.treats.forEach(treat => {
+        if (treat.collected) return;
+        const tx = treat.x;
+        const ty = treat.y;
+
+        // Draw Treat
+        ctx.save();
+        ctx.translate(tx, ty);
+
+        if (treat.type === 'donut') {
+          // Glazed Strawberry Donut 🍩
+          ctx.fillStyle = '#f59e0b'; // golden pastry
+          ctx.beginPath();
+          ctx.arc(0, 0, 12, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pink Frosting
+          ctx.fillStyle = '#f43f5e';
+          ctx.beginPath();
+          ctx.arc(0, 0, 9.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Donut Hole
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(0, 0, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Sprinkles
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(-5, -6, 2.5, 1.5);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(3, -5, 1.5, 2.5);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-2, 4, 2.5, 1.5);
+        } else {
+          // Blueberry Muffin 🧁
+          // Muffin wrapper base
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.moveTo(-9, 0);
+          ctx.lineTo(-6, 11);
+          ctx.lineTo(6, 11);
+          ctx.lineTo(9, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          // Fluffy chocolate/blueberry muffin top
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.arc(0, -1, 11, Math.PI, 0);
+          ctx.fill();
+
+          // Chocolate chips
+          ctx.fillStyle = '#451a03';
+          ctx.beginPath();
+          ctx.arc(-4, -4, 2, 0, Math.PI * 2);
+          ctx.arc(3, -5, 2, 0, Math.PI * 2);
+          ctx.arc(0, -1, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        // Check if claimed by alien
+        const dist = Math.hypot(alienX - tx, (g.alienY - 20) - ty);
+        if (dist < 26) {
+          treat.collected = true;
+          g.score += 50;
+          g.treatsCount += 1;
+          g.tastySpeechTimer = 48; // Show "Hehe, tasty! 😋"
+
+          setScore(g.score);
+          setTreatsCount(g.treatsCount);
+          if (onScoreUpdate) onScoreUpdate(g.score);
+
+          // Munch sound
+          if (g.soundEnabled && soundEngine.playNomSound) {
+            soundEngine.playNomSound();
+          }
+
+          // Alien voice says "Hehe, tasty!"
+          if (g.soundEnabled && 'speechSynthesis' in window) {
+            try {
+              window.speechSynthesis.cancel();
+              const u = new SpeechSynthesisUtterance('Hehe, tasty!');
+              u.pitch = 1.7; // cute high alien pitch
+              u.rate = 1.15;
+              window.speechSynthesis.speak(u);
+            } catch (err) {}
+          }
+
+          // 5-Treat Fart Boost Activation!
+          if (g.treatsCount >= 5) {
+            g.treatsCount = 0;
+            setTreatsCount(0);
+            g.isFartBoosting = true;
+            g.fartBoostTimer = 180; // 3 seconds at 60fps!
+            setIsFartBoosting(true);
+
+            if (g.soundEnabled && soundEngine.playFartSound) {
+              soundEngine.playFartSound();
+            }
+
+            try {
+              confetti({ particleCount: 35, spread: 55, origin: { x: alienX / W, y: g.alienY / H } });
+            } catch (e) {}
+          }
+        }
+      });
+
+      // 6. DRAW OBSTACLES & CHECK COLLISION
       g.obstacles.forEach(obs => {
         const obsX = obs.x;
         const obsY = g.groundY - obs.height;
 
-        // Draw obstacle based on type
         if (obs.type === 'crystal') {
-          // Purple space crystal
           ctx.fillStyle = '#a855f7';
           ctx.beginPath();
           ctx.moveTo(obsX + obs.width / 2, obsY);
@@ -783,7 +988,6 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           ctx.lineWidth = 2;
           ctx.stroke();
         } else if (obs.type === 'meteor') {
-          // Orange spiky space rock
           ctx.fillStyle = '#f97316';
           ctx.beginPath();
           ctx.arc(obsX + obs.width / 2, obsY + obs.height / 2, obs.width / 2, 0, Math.PI * 2);
@@ -792,17 +996,15 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           ctx.lineWidth = 2;
           ctx.stroke();
         } else {
-          // Neon electric barrier
           ctx.fillStyle = '#06b6d4';
           ctx.fillRect(obsX + 4, obsY + 6, obs.width - 8, obs.height - 6);
-          // Glowing top orb
           ctx.fillStyle = '#38bdf8';
           ctx.beginPath();
           ctx.arc(obsX + obs.width / 2, obsY + 6, 8, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Check if safely cleared/jumped past
+        // Leaps cleared
         if (!obs.passed && obsX + obs.width < alienX - 10) {
           obs.passed = true;
           g.score += 25;
@@ -817,30 +1019,29 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           }
         }
 
-        // Collision Check (AABB with safe margins)
-        if (!g.isCrying) {
+        // Collision Check (Completely immune when Fart Boosting!)
+        if (!g.isCrying && !g.isFartBoosting) {
           const hitX = alienX + 16 > obsX + 4 && alienX - 16 < obsX + obs.width - 4;
           const hitY = g.alienY > obsY + 4 && alienTop < obsY + obs.height;
 
           if (hitX && hitY) {
-            // HIT! Alien enters crying state
+            // HIT! Alien cries for ~900ms, timer keeps running!
             g.isCrying = true;
-            g.cryingTimer = 55; // ~900ms
+            g.cryingTimer = 55;
             if (g.soundEnabled && soundEngine.playBonkSound) {
               soundEngine.playBonkSound();
             }
-            // Push obstacle safely behind alien so it doesn't trigger again
             obs.x = -100;
           }
         }
       });
 
-      // 5. DRAW THE CUTE GREEN ALIEN
+      // 7. DRAW THE CUTE GREEN ALIEN (Running / Jumping / Crying / Fart-Flying)
       ctx.save();
       ctx.translate(alienX, g.alienY);
 
       // Body (Green dome)
-      ctx.fillStyle = '#22c55e'; // Lime green
+      ctx.fillStyle = '#22c55e';
       ctx.beginPath();
       ctx.ellipse(0, -18, 16, 20, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -853,29 +1054,28 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(-6, -34);
-      ctx.lineTo(-10, -44);
+      ctx.lineTo(g.isFartBoosting ? -14 : -10, -44);
       ctx.moveTo(6, -34);
-      ctx.lineTo(10, -44);
+      ctx.lineTo(g.isFartBoosting ? 4 : 10, -44);
       ctx.stroke();
 
-      ctx.fillStyle = '#38bdf8'; // Glowing cyan orb
+      ctx.fillStyle = g.isFartBoosting ? '#a3e635' : '#38bdf8';
       ctx.beginPath();
-      ctx.arc(-10, -44, 4, 0, Math.PI * 2);
-      ctx.arc(10, -44, 4, 0, Math.PI * 2);
+      ctx.arc(g.isFartBoosting ? -14 : -10, -44, 4, 0, Math.PI * 2);
+      ctx.arc(g.isFartBoosting ? 4 : 10, -44, 4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Eyes & Face
+      // Face & Eyes
       if (g.isCrying) {
-        // CRYING ALIEN: Big teardrops streaming & sad mouth
-        // Sad eyes
+        // CRYING ALIEN
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(-6, -20, 4, Math.PI, 0); // upside-down curved eye
+        ctx.arc(-6, -20, 4, Math.PI, 0);
         ctx.arc(6, -20, 4, Math.PI, 0);
         ctx.stroke();
 
-        // Big blue anime tears fountains streaming down!
+        // Teardrop fountains!
         ctx.fillStyle = '#38bdf8';
         const tearDropY = (g.frame * 2.5) % 18;
         ctx.beginPath();
@@ -885,19 +1085,18 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         ctx.arc(14, -10 + tearDropY * 0.8, 3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Sad open trembling mouth
+        // Trembling sad mouth
         ctx.fillStyle = '#b91c1c';
         ctx.beginPath();
         ctx.ellipse(0, -9, 4, 3, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Floating crying indicator
         ctx.fillStyle = '#f87171';
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('OUCH! 😭', 0, -52);
-      } else if (g.isJumping) {
-        // JUMPING ALIEN: Joyful happy eyes `^ ^`
+      } else if (g.isFartBoosting) {
+        // FART FLYING ALIEN: Cheeky mischievous grin!
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -905,27 +1104,48 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         ctx.arc(6, -20, 4, Math.PI, 0);
         ctx.stroke();
 
-        // Happy open smile
+        // Mischievous wide open grin!
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(0, -11, 5, 0, Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-3, -11, 6, 2); // Tiny white teeth
+
+        // Super flying arms!
+        ctx.strokeStyle = '#15803d';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(10, -18);
+        ctx.lineTo(22, -18);
+        ctx.stroke();
+      } else if (g.isJumping) {
+        // JUMPING ALIEN
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(-6, -20, 4, Math.PI, 0);
+        ctx.arc(6, -20, 4, Math.PI, 0);
+        ctx.stroke();
+
         ctx.fillStyle = '#1e293b';
         ctx.beginPath();
         ctx.arc(0, -11, 4, 0, Math.PI);
         ctx.fill();
       } else {
-        // RUNNING ALIEN: Normal curious shiny eyes
+        // NORMAL RUNNING ALIEN
         ctx.fillStyle = '#0f172a';
         ctx.beginPath();
         ctx.ellipse(-6, -20, 4.5, 6, 0, 0, Math.PI * 2);
         ctx.ellipse(6, -20, 4.5, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Eye reflections
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(-5, -22, 1.8, 0, Math.PI * 2);
         ctx.arc(7, -22, 1.8, 0, Math.PI * 2);
         ctx.fill();
 
-        // Cute smile
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 1.8;
         ctx.beginPath();
@@ -933,20 +1153,52 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         ctx.stroke();
       }
 
-      // Little Alien Feet / Stride animation
-      if (!g.isJumping && !g.isCrying) {
+      // Alien Feet
+      if (!g.isJumping && !g.isCrying && !g.isFartBoosting) {
         const legSwing = Math.sin(g.frame * 0.35) * 6;
         ctx.fillStyle = '#15803d';
         ctx.fillRect(-8 + legSwing, -3, 6, 5);
         ctx.fillRect(2 - legSwing, -3, 6, 5);
       } else {
-        // Feet tucked in jump
         ctx.fillStyle = '#15803d';
         ctx.fillRect(-7, -4, 5, 4);
         ctx.fillRect(2, -4, 5, 4);
       }
 
+      // "Hehe, tasty! 😋" Speech Bubble when donut claimed
+      if (g.tastySpeechTimer > 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(-42, -62, 84, 22, [8]);
+        ctx.fill();
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#e11d48';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Hehe, tasty! 😋', 0, -47);
+      }
+
       ctx.restore();
+
+      // 8. FART BOOST OVERLAY BANNER ON CANVAS
+      if (g.isFartBoosting) {
+        const boostSec = (g.fartBoostTimer / 60).toFixed(1);
+        ctx.fillStyle = 'rgba(132, 204, 22, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(W / 2 - 130, 16, 260, 28, [14]);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`💨 FART BOOST ACTIVE: ${boostSec}s 💨`, W / 2, 35);
+      }
 
       animId = requestAnimationFrame(loop);
     };
@@ -955,7 +1207,6 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     return () => cancelAnimationFrame(animId);
   }, [gameState, highScore, onScoreUpdate]);
 
-  // 1. IDLE SCREEN
   if (gameState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-6">
@@ -968,10 +1219,21 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
             Cosmic Alien Runner
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
-            Help your cute green alien leap over cosmic crystals and obstacles (Chrome Dino style)! If you bump into an obstacle, the alien will cry for a quick moment and keep running—<strong>the timer stays running without resetting</strong>!
+            Jump to leap over obstacles, grab elevated donuts & muffins (alien laughs & says <em>"Tasty!"</em>), and collect 5 treats to unleash a hilarious <strong>3-second Fart Boost</strong> flight!
           </p>
         </div>
 
+        {/* Feature summary pills */}
+        <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 px-3 py-1 rounded-xl font-bold border border-emerald-200 dark:border-emerald-800">
+            🍩 Claim 5 Treats = 3s Fart Boost!
+          </span>
+          <span className="bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300 px-3 py-1 rounded-xl font-bold border border-cyan-200 dark:border-cyan-800">
+            😭 Obstacle Hit = Crying Alien (Timer Never Resets)
+          </span>
+        </div>
+
+        {/* Duration selector */}
         <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700 text-xs">
           <span className="font-bold text-slate-500 px-2 flex items-center space-x-1">
             <Clock className="w-3.5 h-3.5" />
@@ -992,6 +1254,7 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           ))}
         </div>
 
+        {/* High score badge */}
         <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center space-x-1.5 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
           <Trophy className="w-3.5 h-3.5" />
           <span>Your Best Score: {highScore} Points</span>
@@ -1008,7 +1271,6 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     );
   }
 
-  // 2. GAME OVER SCREEN (Results + Motivational Quote)
   if (gameState === 'gameover') {
     return (
       <GameResultCard
@@ -1027,17 +1289,25 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     );
   }
 
-  // 3. ACTIVE PLAYING VIEW
   return (
     <div className="flex flex-col h-full select-none">
-      <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
+      {/* Header Bar with Donut/Muffin Counter HUD */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
         <div className="flex items-center space-x-3">
           <span className="font-heading font-extrabold text-sm text-slate-800 dark:text-white">
             Score: <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-base">{score}</strong>
           </span>
-          <span className="text-slate-500 font-semibold">
-            Leaps: {leapsCount}
-          </span>
+
+          {/* Treat Claim Meter for Fart Boost */}
+          <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-xl font-bold border transition ${
+            isFartBoosting 
+              ? 'bg-lime-500 text-white border-lime-400 animate-pulse'
+              : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600'
+          }`}>
+            <span>🍩 Treats:</span>
+            <span className="font-mono text-sm">{treatsCount}/5</span>
+            {isFartBoosting && <span className="text-[10px] uppercase tracking-wide">💨 BOOST!</span>}
+          </div>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -1060,7 +1330,7 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         </div>
       </div>
 
-      {/* 60FPS Native Canvas Runner Arena */}
+      {/* 60FPS Canvas Arena */}
       <div 
         onClick={triggerJump}
         className="relative flex-1 min-h-[360px] rounded-2xl border border-emerald-500/30 overflow-hidden my-3 cursor-pointer select-none touch-none shadow-inner"
@@ -1072,15 +1342,14 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           className="w-full h-full block"
         />
 
-        {/* Tap to jump guide overlay */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 pointer-events-none border border-white/20">
-          🚀 Press [Spacebar] or Tap Screen to Jump Obstacles!
+          🚀 Press [Spacebar] to Jump, grab elevated Donuts & trigger Fart Boost!
         </div>
       </div>
 
-      {/* Jump Button for Mobile & Laptop Trackpad Users */}
+      {/* Jump Button */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500 hidden sm:inline">Timing is key! Hop over oncoming space crystals and rocks:</span>
+        <span className="text-slate-500 hidden sm:inline">Jump for elevated muffins/donuts & leap past crystals:</span>
         <button
           onClick={triggerJump}
           className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-emerald-500/25 transition active:scale-95 flex items-center justify-center space-x-2"
@@ -1108,7 +1377,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
 
   const canvasRef = useRef(null);
 
-  // Fast mutable game ref to guarantee ZERO React re-render lag
   const gRef = useRef({
     basketX: 360,
     targetBasketX: 360,
@@ -1143,7 +1411,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     setGameState('playing');
   };
 
-  // Session timer
   useEffect(() => {
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
@@ -1158,7 +1425,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Pointer tracking across canvas (zero lag)
   const handlePointer = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1168,7 +1434,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     gRef.current.targetBasketX = Math.max(50, Math.min(canvas.width - 50, clientX));
   };
 
-  // Arrow key controls
   useEffect(() => {
     if (gameState !== 'playing') return;
     const handleKeyDown = (e) => {
@@ -1185,7 +1450,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState]);
 
-  // 60FPS Canvas Render Loop (Zero Lag + Beautiful Geometry Shapes)
   useEffect(() => {
     if (gameState !== 'playing') return;
     const canvas = canvasRef.current;
@@ -1199,18 +1463,17 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
       const W = canvas.width;
       const H = canvas.height;
 
-      // Smooth basket linear interpolation (super buttery feel)
       g.basketX += (g.targetBasketX - g.basketX) * 0.22;
 
-      // 1. RENDER STREAM BACKGROUND
+      // 1. BACKGROUND
       const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-      bgGrad.addColorStop(0, '#0f172a'); // night sky
-      bgGrad.addColorStop(0.5, '#064e3b'); // tranquil river
-      bgGrad.addColorStop(1, '#022c22'); // deep emerald pond
+      bgGrad.addColorStop(0, '#0f172a');
+      bgGrad.addColorStop(0.5, '#064e3b');
+      bgGrad.addColorStop(1, '#022c22');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // Water stream ripples
+      // Water ripples
       ctx.strokeStyle = 'rgba(45, 212, 191, 0.12)';
       ctx.lineWidth = 2;
       for (let i = 0; i < 4; i++) {
@@ -1227,27 +1490,27 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         const rand = Math.random();
         let shape = 'star';
         let pts = 30;
-        let color = '#fbbf24'; // golden
+        let color = '#fbbf24';
         let isHazard = false;
 
         if (rand < 0.28) {
-          shape = 'dewdrop'; // 💧 Dewdrop of Peace
+          shape = 'dewdrop';
           pts = 15;
-          color = '#38bdf8'; // sky blue
+          color = '#38bdf8';
         } else if (rand < 0.52) {
-          shape = 'sakura'; // 🌸 Lotus Blossom
+          shape = 'sakura';
           pts = 25;
-          color = '#f472b6'; // pink
+          color = '#f472b6';
         } else if (rand < 0.74) {
-          shape = 'crystal'; // 💎 Emerald Gem
+          shape = 'crystal';
           pts = 40;
-          color = '#34d399'; // emerald
+          color = '#34d399';
         } else if (rand < 0.88) {
-          shape = 'star'; // ⭐ Golden Star
+          shape = 'star';
           pts = 35;
           color = '#fbbf24';
         } else {
-          shape = 'storm'; // ⚡ Storm cloud hazard
+          shape = 'storm';
           pts = -15;
           color = '#94a3b8';
           isHazard = true;
@@ -1267,22 +1530,19 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         g.nextSpawnTimer = 34 + Math.floor(Math.random() * 22);
       }
 
-      // 3. UPDATE & DRAW FALLING OBJECTS
+      // 3. DRAW FALLING OBJECTS
       const basketY = H - 50;
       const basketW = 92;
-      const basketH = 26;
 
       g.items.forEach(item => {
         item.y += item.speed;
         item.rot += 0.03;
 
-        // Draw Object
         ctx.save();
         ctx.translate(item.x, item.y);
         ctx.rotate(item.rot);
 
         if (item.shape === 'star') {
-          // 5-Point Shimmering Star
           ctx.fillStyle = '#fde047';
           ctx.shadowColor = '#facc15';
           ctx.shadowBlur = 10;
@@ -1294,7 +1554,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           ctx.closePath();
           ctx.fill();
         } else if (item.shape === 'dewdrop') {
-          // Glossy Water Dewdrop
           ctx.fillStyle = '#38bdf8';
           ctx.shadowColor = '#0284c7';
           ctx.shadowBlur = 8;
@@ -1303,13 +1562,11 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           ctx.lineTo(0, -12);
           ctx.closePath();
           ctx.fill();
-          // Specular shine
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
           ctx.arc(-3, 2, 2.5, 0, Math.PI * 2);
           ctx.fill();
         } else if (item.shape === 'sakura') {
-          // 5-Petal Lotus / Sakura Blossom
           ctx.fillStyle = '#f472b6';
           ctx.shadowColor = '#ec4899';
           ctx.shadowBlur = 8;
@@ -1318,12 +1575,11 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
             ctx.ellipse(0, 7, 5, 8, (petal * 72) * Math.PI / 180, 0, Math.PI * 2);
             ctx.fill();
           }
-          ctx.fillStyle = '#fef08a'; // Flower core
+          ctx.fillStyle = '#fef08a';
           ctx.beginPath();
           ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
           ctx.fill();
         } else if (item.shape === 'crystal') {
-          // Emerald Faceted Gem
           ctx.fillStyle = '#34d399';
           ctx.shadowColor = '#10b981';
           ctx.shadowBlur = 10;
@@ -1338,7 +1594,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           ctx.lineWidth = 1.5;
           ctx.stroke();
         } else {
-          // Storm Cloud Hazard with Lightning
           ctx.fillStyle = '#64748b';
           ctx.shadowColor = '#334155';
           ctx.shadowBlur = 6;
@@ -1347,7 +1602,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           ctx.arc(7, 0, 8, 0, Math.PI * 2);
           ctx.arc(0, -6, 9, 0, Math.PI * 2);
           ctx.fill();
-          // Lightning bolt
           ctx.fillStyle = '#fde047';
           ctx.beginPath();
           ctx.moveTo(-2, -3);
@@ -1362,9 +1616,8 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
 
         ctx.restore();
 
-        // 4. CATCH COLLISION CHECK
+        // Catch check
         if (item.y >= basketY - 14 && item.y <= basketY + 16 && Math.abs(item.x - g.basketX) < basketW / 2 + 8) {
-          // Caught!
           if (item.isHazard) {
             g.score = Math.max(0, g.score - 15);
             g.popups.push({ x: item.x, y: basketY - 10, text: '-15', color: '#f87171', alpha: 1 });
@@ -1386,34 +1639,33 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
             localStorage.setItem('mindspring_lotus_high', g.score.toString());
           }
 
-          item.y = 999; // mark caught to remove
+          item.y = 999;
         }
       });
 
-      // Filter off-screen items
       g.items = g.items.filter(item => item.y < H + 30);
 
-      // 5. DRAW THE LOTUS BASKET
+      // 4. DRAW LOTUS BASKET
       ctx.save();
       ctx.translate(g.basketX, basketY);
 
-      // Water glow ring
+      // Water ripple
       ctx.fillStyle = 'rgba(45, 212, 191, 0.25)';
       ctx.beginPath();
       ctx.ellipse(0, 14, 52, 9, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Green lily pad base
+      // Lily pad
       ctx.fillStyle = '#059669';
       ctx.beginPath();
       ctx.ellipse(0, 10, 48, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Golden Lotus Bowl
+      // Lotus bowl
       const lotusGrad = ctx.createLinearGradient(-45, 0, 45, 0);
-      lotusGrad.addColorStop(0, '#f59e0b'); // amber
-      lotusGrad.addColorStop(0.5, '#fb7185'); // rose pink
-      lotusGrad.addColorStop(1, '#14b8a6'); // teal
+      lotusGrad.addColorStop(0, '#f59e0b');
+      lotusGrad.addColorStop(0.5, '#fb7185');
+      lotusGrad.addColorStop(1, '#14b8a6');
       ctx.fillStyle = lotusGrad;
       ctx.beginPath();
       ctx.arc(0, 0, 42, 0.15, Math.PI - 0.15);
@@ -1423,7 +1675,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
       ctx.lineWidth = 2.5;
       ctx.stroke();
 
-      // Lotus Bowl Label
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
@@ -1431,7 +1682,7 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
 
       ctx.restore();
 
-      // 6. DRAW FLOATING SCORE POPUPS
+      // 5. DRAW POPUPS
       g.popups.forEach(pop => {
         pop.y -= 1.2;
         pop.alpha -= 0.035;
@@ -1553,7 +1804,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         </div>
       </div>
 
-      {/* 60FPS Native Canvas Catch Stream */}
       <div
         onPointerMove={handlePointer}
         onPointerDown={handlePointer}
@@ -1571,7 +1821,6 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         </div>
       </div>
 
-      {/* Touch / Arrow Navigation buttons */}
       <div className="flex items-center justify-between text-xs">
         <span className="text-slate-500 hidden sm:inline">Dodge the stormy lightning clouds!</span>
         <div className="flex items-center space-x-2 w-full sm:w-auto justify-center">
@@ -1620,8 +1869,8 @@ export default function MiniGameStudio({ onComplete }) {
       id: 'alien',
       name: 'Cosmic Alien Runner',
       icon: '👽',
-      desc: 'Spacebar jump past obstacles (Chrome Dino style)',
-      badge: 'Focus & Reflex'
+      desc: 'Claim donuts & trigger 3s Fart Boost flight!',
+      badge: 'Muffins & Fart Boost 💨'
     },
     {
       id: 'lotus',

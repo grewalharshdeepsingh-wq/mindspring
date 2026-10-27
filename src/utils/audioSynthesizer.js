@@ -250,6 +250,59 @@ class SoundEngine {
     } catch (e) {}
   }
 
+  // Mini-Game: Alien Muffin/Donut Munch Sound
+  playNomSound() {
+    try {
+      this.init();
+      [420, 620].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const startT = this.ctx.currentTime + idx * 0.08;
+        osc.frequency.setValueAtTime(freq, startT);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.5, startT + 0.06);
+
+        gain.gain.setValueAtTime(0.22, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.07);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.07);
+      });
+    } catch (e) {}
+  }
+
+  // Mini-Game: Alien Fart Boost Sound
+  playFartSound() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(420, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.35);
+
+      osc.frequency.setValueAtTime(130, this.ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.18);
+      osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.35);
+
+      gain.gain.setValueAtTime(0.32, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.36);
+    } catch (e) {}
+  }
+
   // Mini-Game: Alien Bonk / Sad Whimper Sound
   playBonkSound() {
     try {
