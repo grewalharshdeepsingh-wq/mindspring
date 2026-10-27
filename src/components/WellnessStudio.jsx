@@ -7,9 +7,10 @@ import {
   Flower2, 
   Eye, 
   Heart,
-  ArrowRight
+  Moon
 } from 'lucide-react';
 import BreathingStudio from './BreathingStudio';
+import MeditationStudio from './MeditationStudio';
 import StudyTimer from './StudyTimer';
 import ThoughtFlipTool from './ThoughtFlipTool';
 import ZenCanvas from './ZenCanvas';
@@ -17,9 +18,16 @@ import GratitudeGarden from './GratitudeGarden';
 import ActionStepsViewer from './ActionStepsViewer';
 
 export default function WellnessStudio({ flowers, onAddFlower }) {
-  const [activeTool, setActiveTool] = useState('breathing');
+  const [activeTool, setActiveTool] = useState('meditation');
 
   const tools = [
+    {
+      id: 'meditation',
+      name: 'Guided Meditation',
+      icon: Moon,
+      color: 'from-teal-500 to-cyan-600',
+      desc: 'Guided calming meditation with audio chimes and body scan relaxation.'
+    },
     {
       id: 'breathing',
       name: 'Breathing Studio',
@@ -59,7 +67,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
       id: 'grounding',
       name: '5-4-3-2-1 Sensory Reset',
       icon: Eye,
-      color: 'from-teal-500 to-cyan-700',
+      color: 'from-teal-600 to-slate-700',
       desc: 'Anchor somatic awareness to stop exam panic spirals instantly.'
     }
   ];
@@ -82,7 +90,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
       </div>
 
       {/* Tool Navigation Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {tools.map((t) => {
           const Icon = t.icon;
           const isActive = activeTool === t.id;
@@ -90,7 +98,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
             <button
               key={t.id}
               onClick={() => setActiveTool(t.id)}
-              className={`p-3.5 rounded-2xl border-2 text-left transition flex flex-col justify-between h-28 ${
+              className={`p-3 rounded-2xl border-2 text-left transition flex flex-col justify-between h-28 ${
                 isActive
                   ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-md ring-2 ring-emerald-400/20'
                   : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-slate-300'
@@ -110,6 +118,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
 
       {/* Active Tool Viewport */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6">
+        {activeTool === 'meditation' && <MeditationStudio />}
         {activeTool === 'breathing' && <BreathingStudio />}
         {activeTool === 'timer' && <StudyTimer />}
         {activeTool === 'thought_flip' && <ThoughtFlipTool />}

@@ -4,13 +4,25 @@
 export const ACTIVITY_CATALOG = [
   // =================== 1. STRESS-RELIEF ACTIVITIES ===================
   {
+    id: 'mindful_meditation',
+    category: 'relief',
+    title: 'Mindful Breathing & Guided Meditation',
+    durationMinutes: 3,
+    type: 'meditation',
+    stressorSuitability: ['exam_stress', 'anxious', 'overwhelmed', 'procrastination', 'sleep_fatigue', 'social_pressure', 'family_expectations', 'conflict_bullying', 'scattered'],
+    description: 'Guided mindfulness meditation with calming spoken anchors, somatic body scan, and gentle chime pacing to soothe racing exam thoughts.',
+    benefit: 'Reduces amygdala reactivity and restores prefrontal executive focus in under 3 minutes.',
+    icon: 'Flower2',
+    interactiveComponent: 'meditation'
+  },
+  {
     id: 'box_breathing',
     category: 'relief',
-    title: 'Box Breathing (Sama Vritti)',
+    title: 'Box Breathing (Sama Vritti 4-4-4-4)',
     durationMinutes: 3,
     type: 'breathing',
-    stressorSuitability: ['exam_stress', 'anxious', 'overwhelmed', 'procrastination'],
-    description: 'Equal 4-second cycles of inhale, hold, exhale, hold. Used by emergency responders to quickly down-regulate the nervous system.',
+    stressorSuitability: ['exam_stress', 'anxious', 'overwhelmed', 'procrastination', 'conflict_bullying'],
+    description: 'Equal 4-second cycles of inhale, hold, exhale, hold with animated visual guidance. Used by emergency responders to quickly down-regulate the nervous system.',
     benefit: 'Lowers acute heart rate and clears racing thoughts in 180 seconds.',
     icon: 'Wind',
     interactiveComponent: 'breathing',
@@ -22,7 +34,7 @@ export const ACTIVITY_CATALOG = [
     title: '4-7-8 Deep Parasympathetic Breath',
     durationMinutes: 4,
     type: 'breathing',
-    stressorSuitability: ['sleep_fatigue', 'exam_stress', 'family_expectations'],
+    stressorSuitability: ['sleep_fatigue', 'exam_stress', 'family_expectations', 'anxious'],
     description: 'Dr. Andrew Weil method: Inhale 4s, deep hold 7s, long soothing whoosh exhale 8s. Signals profound safety to the brain.',
     benefit: 'Relieves somatic tension and prepares the mind for restorative sleep or focused revision.',
     icon: 'Feather',
@@ -61,8 +73,8 @@ export const ACTIVITY_CATALOG = [
     title: 'BJ Fogg 5-Minute Study Start',
     durationMinutes: 5,
     type: 'timer',
-    stressorSuitability: ['procrastination', 'exam_stress', 'overwhelmed'],
-    description: 'Behavioral science shows starting is 90% of the battle. Commit to just 5 minutes of focused reading or problem-solving. No obligation to continue afterward.',
+    stressorSuitability: ['procrastination', 'exam_stress', 'overwhelmed', 'scattered'],
+    description: 'Behavioral science shows starting is 90% of the battle. Commit to just 5 minutes of focused reading or problem-solving with ambient audio. No obligation to continue afterward.',
     benefit: 'Bypasses the brain amygdala panic resistance response to massive syllabus tasks.',
     icon: 'Clock',
     interactiveComponent: 'study_timer'
@@ -249,14 +261,14 @@ export const ACTIVITY_CATALOG = [
 
 // Helper to determine the balanced 4-part plan for a student based on stressor and mood
 export function generateDailyPlan(stressorId, currentMoodId) {
-  // 1. Pick Stress Relief activity
+  // 1. Pick Stress Relief activity (prefer meditation or breathing)
   const reliefCandidates = ACTIVITY_CATALOG.filter(a => 
     a.category === 'relief' && 
     (a.stressorSuitability.includes(stressorId) || a.stressorSuitability.includes(currentMoodId))
   );
   const relief = reliefCandidates.length > 0 
     ? reliefCandidates[Math.floor(Math.random() * reliefCandidates.length)]
-    : ACTIVITY_CATALOG.find(a => a.id === 'box_breathing');
+    : ACTIVITY_CATALOG.find(a => a.id === 'mindful_meditation');
 
   // 2. Pick Growth activity
   const growthCandidates = ACTIVITY_CATALOG.filter(a => 
@@ -287,8 +299,8 @@ export function generateDailyPlan(stressorId, currentMoodId) {
 
   return [
     { ...relief, instanceId: `relief-${Date.now()}`, completed: false, skipped: false, userRating: 0, feedback: '' },
-    { ...growth, instanceId: `growth-${Date.now()}`, completed: false, skipped: false, userRating: 0, feedback: '' },
-    { ...action, instanceId: `action-${Date.now()}`, completed: false, skipped: false, userRating: 0, feedback: '' },
-    { ...funBreak, instanceId: `break-${Date.now()}`, completed: false, skipped: false, userRating: 0, feedback: '' },
+    { ...growth, instanceId: `growth-${Date.now() + 1}`, completed: false, skipped: false, userRating: 0, feedback: '' },
+    { ...action, instanceId: `action-${Date.now() + 2}`, completed: false, skipped: false, userRating: 0, feedback: '' },
+    { ...funBreak, instanceId: `break-${Date.now() + 3}`, completed: false, skipped: false, userRating: 0, feedback: '' },
   ];
 }
