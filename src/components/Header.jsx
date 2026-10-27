@@ -23,14 +23,14 @@ export default function Header({
   schoolName = ''
 }) {
   const navItems = [
-    { id: 'plan', label: 'Daily Wellness Plan', icon: Calendar },
+    { id: 'plan', label: 'Daily Plan', icon: Calendar },
     { id: 'studio', label: 'Wellness Studio', icon: Feather },
     { id: 'minigame', label: 'Zen Arcade 🎮', icon: Gamepad2 },
-    { id: 'table', label: 'Data & Progress Table', icon: Table },
+    { id: 'table', label: 'Data & Progress', icon: Table },
     { id: 'soundscapes', label: 'Soundscapes', icon: Headphones },
-    { id: 'growth', label: 'Growth & Insights', icon: BarChart3 },
+    { id: 'growth', label: 'Growth Insights', icon: BarChart3 },
     { id: 'counselor', label: 'Counselor & Safety', icon: HeartHandshake },
-    { id: 'privacy', label: 'Privacy & Profile', icon: Lock },
+    { id: 'privacy', label: 'Profile & Privacy', icon: Lock },
   ];
 
   return (
@@ -68,16 +68,16 @@ export default function Header({
       </div>
 
       {/* Main navigation container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        {/* Brand identity & Highly Visible Quick Check-In placed upfront */}
-        <div className="flex items-center justify-between gap-4 w-full md:w-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2.5 pb-2">
+        {/* Brand identity & Quick Check-In Header Row */}
+        <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800/60">
           <div 
             onClick={() => setActiveTab('plan')}
             className="flex items-center space-x-3 cursor-pointer group"
           >
             {/* MindSpring Logo */}
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-200/50 group-hover:scale-105 transition-transform">
-              <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-200/50 group-hover:scale-105 transition-transform">
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2a5 5 0 0 1 5 5c0 1.5-.7 2.8-1.7 3.7.8.4 1.5 1 2 1.8 1.4 2.1 1 5-1 6.8-.7.7-1.7 1.2-2.8 1.4" />
                 <path d="M12 2a5 5 0 0 0-5 5c0 1.5.7 2.8 1.7 3.7-.8.4-1.5 1-2 1.8-1.4 2.1-1 5 1 6.8.7.7 1.7 1.2 2.8 1.4" />
                 <path d="M12 2v20" />
@@ -87,20 +87,20 @@ export default function Header({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-heading font-extrabold text-2xl tracking-tight text-slate-800 dark:text-white">
+                <span className="font-heading font-extrabold text-xl tracking-tight text-slate-800 dark:text-white">
                   MIND<span className="text-emerald-600 dark:text-emerald-400">SPRING</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-none">
                 Personalised Student Wellness & Emotional Growth
               </p>
             </div>
           </div>
 
-          {/* Prominent Quick Check-In CTA Button - Highly visible upfront next to brand */}
+          {/* Quick Check-In CTA Button */}
           <button
             onClick={onOpenCheckIn}
-            className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transform hover:-translate-y-0.5 active:translate-y-0 transition ring-2 ring-emerald-400/40 whitespace-nowrap"
+            className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-md hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 active:translate-y-0 transition ring-2 ring-emerald-400/30 whitespace-nowrap"
             title="Start your daily 30-second mood & stress check-in"
           >
             <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '4s' }} />
@@ -109,27 +109,29 @@ export default function Header({
           </button>
         </div>
 
-        {/* Tab Navigation items */}
-        <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
-                  isActive
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-600/40 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Full-Width Navigation Bar: Fits all 8 options on laptop without side scrolling */}
+        <nav className="pt-2">
+          <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-1 w-full">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex-1 min-w-fit flex items-center justify-center space-x-1.5 px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition text-center whitespace-nowrap ${
+                    isActive
+                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-600/40 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
       </div>
     </header>
   );
