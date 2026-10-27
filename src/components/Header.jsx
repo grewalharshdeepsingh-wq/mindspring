@@ -3,14 +3,13 @@ import {
   Sparkles, 
   HeartHandshake, 
   ShieldAlert, 
-  Compass, 
   Calendar, 
   Headphones, 
   BarChart3, 
   Lock, 
-  Users,
   Feather,
-  Info
+  Table,
+  User
 } from 'lucide-react';
 
 export default function Header({ 
@@ -18,30 +17,40 @@ export default function Header({
   setActiveTab, 
   onOpenCheckIn, 
   onOpenCrisis, 
-  onOpenAbout,
-  studentName,
-  schoolName
+  onOpenProfile,
+  studentName = '',
+  schoolName = ''
 }) {
   const navItems = [
     { id: 'plan', label: 'Daily Wellness Plan', icon: Calendar },
     { id: 'studio', label: 'Wellness Studio', icon: Feather },
+    { id: 'table', label: 'Data & Progress Table', icon: Table },
     { id: 'soundscapes', label: 'Soundscapes', icon: Headphones },
     { id: 'growth', label: 'Growth & Insights', icon: BarChart3 },
     { id: 'counselor', label: 'Counselor & Safety', icon: HeartHandshake },
-    { id: 'privacy', label: 'Privacy & Data', icon: Lock },
+    { id: 'privacy', label: 'Privacy & Profile', icon: Lock },
   ];
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-white/85 dark:bg-slate-900/85 border-b border-emerald-100 dark:border-slate-800 shadow-sm transition-colors">
-      {/* Top micro-bar for psychological safety & School details */}
+      {/* Clean top micro-bar without competition/school slang */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white text-xs px-4 py-1.5 flex items-center justify-between">
         <div className="flex items-center space-x-2 font-medium truncate">
-          <span className="bg-white/20 px-2 py-0.5 rounded-full text-[11px] tracking-wide uppercase font-semibold">
-            Bal Bharati AIDEATION 2.0
+          <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[11px] tracking-wide font-semibold">
+            🌱 Student Wellness & Emotional Growth Portal
           </span>
-          <span className="hidden sm:inline text-white/90">
-            {schoolName} • Student Portal
-          </span>
+          {studentName ? (
+            <span className="hidden sm:inline text-white/90">
+              • Welcome, <strong>{studentName}</strong> {schoolName ? `(${schoolName})` : ''}
+            </span>
+          ) : (
+            <button 
+              onClick={onOpenProfile}
+              className="hidden sm:inline text-white/80 hover:text-white underline decoration-white/40 cursor-pointer text-xs"
+            >
+              • Click to set your name & school
+            </button>
+          )}
         </div>
 
         <div className="flex items-center space-x-3">
@@ -52,14 +61,6 @@ export default function Header({
           >
             <ShieldAlert className="w-3.5 h-3.5" />
             <span>Need Help Now?</span>
-          </button>
-
-          <button
-            onClick={onOpenAbout}
-            className="text-white/80 hover:text-white flex items-center space-x-1 underline decoration-white/40"
-          >
-            <Info className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Project MindSpring</span>
           </button>
         </div>
       </div>
@@ -72,7 +73,7 @@ export default function Header({
             onClick={() => setActiveTab('plan')}
             className="flex items-center space-x-3 cursor-pointer group"
           >
-            {/* MindSpring Logo - Stylized Brain & Sprout Emblem */}
+            {/* MindSpring Logo */}
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-200/50 group-hover:scale-105 transition-transform">
               <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2a5 5 0 0 1 5 5c0 1.5-.7 2.8-1.7 3.7.8.4 1.5 1 2 1.8 1.4 2.1 1 5-1 6.8-.7.7-1.7 1.2-2.8 1.4" />
@@ -86,9 +87,6 @@ export default function Header({
               <div className="flex items-center space-x-2">
                 <span className="font-heading font-extrabold text-2xl tracking-tight text-slate-800 dark:text-white">
                   MIND<span className="text-emerald-600 dark:text-emerald-400">SPRING</span>
-                </span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
-                  v2.0
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">

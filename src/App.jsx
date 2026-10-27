@@ -4,9 +4,9 @@ import DailyPlanView from './components/DailyPlanView';
 import WellnessStudio from './components/WellnessStudio';
 import SoundscapePlayer from './components/SoundscapePlayer';
 import ProgressDashboard from './components/ProgressDashboard';
+import ProgressTable from './components/ProgressTable';
 import CounselorCrisisModal from './components/CounselorCrisisModal';
 import PrivacySettingsModal from './components/PrivacySettingsModal';
-import AboutModal from './components/AboutModal';
 import CheckInModal from './components/CheckInModal';
 import ActivityRunnerModal from './components/ActivityRunnerModal';
 import { loadMindSpringVault, saveMindSpringVault } from './utils/storage';
@@ -20,7 +20,6 @@ export default function App() {
   // Modals
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isCrisisOpen, setIsCrisisOpen] = useState(false);
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [runningActivity, setRunningActivity] = useState(null);
 
   // Appearance
@@ -89,15 +88,45 @@ export default function App() {
       });
     }
 
+    // Auto-log to progress table
+    const completedTasksCount = updatedPlan.filter(p => p.completed).length;
+    const newRecord = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      studentName: vault.studentProfile?.name || 'Self',
+      school: vault.studentProfile?.school || 'School',
+      mood: feedbackData.feelingShift || 'Calmer 🌿',
+      stressor: vault.currentCheckIn?.stressorTitle || 'Daily Wellness',
+      goal: vault.currentCheckIn?.goal || 'Study Reset',
+      tasksCompleted: `${completedTasksCount}/4 Completed`,
+      rating: feedbackData.rating || 5,
+      reflection: feedbackData.reflectionNote || 'Completed micro-wellness activity.',
+      status: 'Completed'
+    };
+
+    const updatedRecords = [newRecord, ...(vault.progressRecords || [])];
+
     const updatedVault = {
       ...vault,
       dailyPlan: updatedPlan,
       completedActivitiesTotal: (vault.completedActivitiesTotal || 0) + 1,
       reflectionJournal: updatedJournal,
-      mindfulDaysCount: (vault.mindfulDaysCount || 10) + 1
+      progressRecords: updatedRecords,
+      mindfulDaysCount: (vault.mindfulDaysCount || 1) + 1
     };
 
     updateVault(updatedVault);
+  };
+
+  // Manual Progress Table handlers
+  const handleAddProgressRecord = (record) => {
+    const updatedRecords = [record, ...(vault.progressRecords || [])];
+    updateVault({ ...vault, progressRecords: updatedRecords });
+  };
+
+  const handleDeleteProgressRecord = (id) => {
+    const updatedRecords = (vault.progressRecords || []).filter(r => r.id !== id);
+    updateVault({ ...vault, progressRecords: updatedRecords });
   };
 
   // Re-roll / Swap single activity in category
@@ -158,7 +187,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           onOpenCheckIn={() => setIsCheckInOpen(true)}
           onOpenCrisis={() => setIsCrisisOpen(true)}
-          onOpenAbout={() => setIsAboutOpen(true)}
+          onOpenProfile={() => setActiveTab('privacy')}
           studentName={vault.studentProfile?.name}
           schoolName={vault.studentProfile?.school}
         />
@@ -180,6 +209,16 @@ export default function App() {
             <WellnessStudio
               flowers={vault.gardenFlowers || []}
               onAddFlower={handleAddFlower}
+            />
+          )}
+
+          {activeTab === 'table' && (
+            <ProgressTable
+              records={vault.progressRecords || []}
+              onAddRecord={handleAddProgressRecord}
+              onDeleteRecord={handleDeleteProgressRecord}
+              currentStudent={vault.studentProfile?.name}
+              currentSchool={vault.studentProfile?.school}
             />
           )}
 
@@ -231,7 +270,7 @@ export default function App() {
           )}
         </main>
 
-        {/* Footer */}
+        {/* Clean Footer without school / competition slang */}
         <footer className="border-t border-emerald-100 dark:border-slate-800 py-6 px-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center space-x-2">
@@ -239,30 +278,36 @@ export default function App() {
                 MindSpring
               </span>
               <span>•</span>
-              <span>Drishti Dr RC Jain Innovative Public School</span>
+              <span>Personalised Student Wellness & Emotional Growth</span>
             </div>
 
             <div className="flex items-center space-x-4">
               <button 
-                onClick={() => setIsAboutOpen(true)}
+                onClick={() => setActiveTab('table')}
                 className="hover:text-emerald-600 transition underline decoration-slate-300"
               >
-                Idea Submission Details (AIDEATION 2.0)
+                Data & Progress Table
+              </button>
+              <button 
+                onClick={() => setActiveTab('privacy')}
+                className="hover:text-emerald-600 transition"
+              >
+                Profile & Privacy
               </button>
               <button 
                 onClick={() => setIsCrisisOpen(true)}
                 className="hover:text-rose-600 transition font-semibold text-rose-500"
               >
-                Crisis Helplines
+                24/7 Crisis Helplines
               </button>
             </div>
           </div>
           <p className="text-[11px] text-slate-400">
-            Non-diagnostic educational platform. Team: Eshaandeep Singh Grewal, Shivteg Singh Grewal, Hargun Kaur • Mentor: Seema Rani
+            A non-diagnostic educational self-care platform dedicated to healthy habit formation, exam calm, and student well-being.
           </p>
         </footer>
 
-        {/* Floating Emergency Support Hotkey Button (Always accessible) */}
+        {/* Floating Emergency Support Hotkey Button */}
         <div className="fixed bottom-5 right-5 z-40">
           <button
             onClick={() => setIsCrisisOpen(true)}
@@ -286,12 +331,7 @@ export default function App() {
         <CounselorCrisisModal
           isOpen={isCrisisOpen}
           onClose={() => setIsCrisisOpen(false)}
-          counselorEmail={vault.studentProfile?.counselorContact}
-        />
-
-        <AboutModal
-          isOpen={isAboutOpen}
-          onClose={() => setIsAboutOpen(false)}
+          counselorEmail={vault.studentProfile?.counselorContact || 'counselor@school.edu'}
         />
 
         <ActivityRunnerModal

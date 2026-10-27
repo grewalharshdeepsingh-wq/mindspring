@@ -9,13 +9,13 @@ import {
   Eye, 
   Sliders, 
   CheckCircle2, 
-  AlertOctagon,
-  User
+  User,
+  GraduationCap
 } from 'lucide-react';
 import { exportVaultJSON, wipeVaultData } from '../utils/storage';
 
 export default function PrivacySettingsModal({ 
-  profile, 
+  profile = {}, 
   onUpdateProfile, 
   darkMode, 
   setDarkMode,
@@ -24,8 +24,10 @@ export default function PrivacySettingsModal({
   onResetApp
 }) {
   const [showWipeConfirm, setShowWipeConfirm] = useState(false);
-  const [studentName, setStudentName] = useState(profile?.name || 'Eshaandeep Singh Grewal');
-  const [school, setSchool] = useState(profile?.school || 'Drishti Dr RC Jain Innovative Public School');
+  const [studentName, setStudentName] = useState(profile?.name || '');
+  const [school, setSchool] = useState(profile?.school || '');
+  const [studentId, setStudentId] = useState(profile?.studentId || '');
+  const [grade, setGrade] = useState(profile?.grade || '');
   const [encryptionOn, setEncryptionOn] = useState(profile?.privacyEncryptionEnabled ?? true);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -33,13 +35,15 @@ export default function PrivacySettingsModal({
     e.preventDefault();
     onUpdateProfile({
       ...profile,
-      name: studentName,
-      school,
+      name: studentName.trim(),
+      school: school.trim(),
+      studentId: studentId.trim(),
+      grade: grade.trim(),
       privacyEncryptionEnabled: encryptionOn,
       highContrastMode: highContrast
     });
     setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2000);
+    setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const handleWipeData = () => {
@@ -55,57 +59,87 @@ export default function PrivacySettingsModal({
         <div className="relative z-10 max-w-2xl space-y-2">
           <div className="flex items-center space-x-2">
             <span className="text-[11px] font-extrabold uppercase tracking-widest bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30">
-              Privacy-by-Design Architecture
+              Student Privacy & Profile
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight">
-            Data Protection & Student Privacy Controls
+            Your Personal Profile & Privacy Controls
           </h2>
           <p className="text-xs text-slate-300">
-            Strict data minimization. Your personal check-ins, journal reflections, and stress triggers are saved directly in your browser's private sandbox and never broadcasted to public leaderboards.
+            Fill in your details at your own pace. All data is saved strictly in your private local browser storage. No public profiles, no rankings, and no server leaks.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Profile & Privacy Configuration */}
+        {/* Profile Configuration Form */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-heading font-bold text-base text-slate-800 dark:text-white flex items-center space-x-2">
               <User className="w-4 h-4 text-emerald-600" />
-              <span>Student Profile & Settings</span>
+              <span>Fill in Your Details</span>
             </h3>
             {savedSuccess && (
               <span className="text-xs text-emerald-600 font-bold flex items-center space-x-1 animate-fade-in">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Saved!</span>
+                <span>Profile Saved!</span>
               </span>
             )}
           </div>
 
-          <form onSubmit={handleSaveProfile} className="space-y-3 pt-2">
+          <form onSubmit={handleSaveProfile} className="space-y-3 pt-1">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                Student Name:
+                Your Name:
               </label>
               <input
                 type="text"
                 value={studentName}
                 onChange={(e) => setStudentName(e.target.value)}
-                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                placeholder="Enter your name..."
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                School / Institution:
+                Your School / Institution:
               </label>
               <input
                 type="text"
                 value={school}
                 onChange={(e) => setSchool(e.target.value)}
-                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                placeholder="Enter your school name..."
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Grade / Class (Optional):
+                </label>
+                <input
+                  type="text"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  placeholder="e.g. Grade 10 / Class VII"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Student ID (Optional):
+                </label>
+                <input
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="e.g. STU-102"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                />
+              </div>
             </div>
 
             {/* Client-side encryption toggle */}
@@ -116,7 +150,7 @@ export default function PrivacySettingsModal({
                   <span>Client-Side Reflection Encryption</span>
                 </span>
                 <p className="text-[11px] text-slate-500">
-                  Obfuscates journal reflections in local storage.
+                  Obfuscates reflections and check-ins in local browser storage.
                 </p>
               </div>
               <input
@@ -131,7 +165,7 @@ export default function PrivacySettingsModal({
               type="submit"
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition"
             >
-              Update Preferences
+              Save Details
             </button>
           </form>
         </div>
@@ -152,7 +186,7 @@ export default function PrivacySettingsModal({
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-800 dark:text-white">Dark / Calming Night Theme</h4>
-                  <p className="text-[11px] text-slate-500">Reduces screen glare during evening revision</p>
+                  <p className="text-[11px] text-slate-500">Reduces screen glare during evening study</p>
                 </div>
               </div>
               <button
@@ -188,7 +222,7 @@ export default function PrivacySettingsModal({
 
             {/* Zero public ranking notice */}
             <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
-              🛡️ <strong>Zero Social Comparison:</strong> No leaderboards, public ranking, or follower counts will ever be introduced into this platform.
+              🛡️ <strong>Zero Social Comparison:</strong> No leaderboards, public ranking, or follower counts will ever be shown.
             </div>
           </div>
         </div>
@@ -219,7 +253,7 @@ export default function PrivacySettingsModal({
           <div className="p-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 space-y-2 bg-rose-50/30 dark:bg-rose-950/20">
             <h4 className="text-xs font-bold text-rose-700 dark:text-rose-400">One-Click Data Purge</h4>
             <p className="text-[11px] text-slate-500">
-              Instantly wipe all check-ins, garden notes, and reflections stored in this browser session.
+              Instantly wipe all check-ins, table progress, and reflections stored in this browser session.
             </p>
             {!showWipeConfirm ? (
               <button
