@@ -477,6 +477,150 @@ class SoundEngine {
     } catch (e) {}
   }
 
+  // Mini-Game: Ghostface Crying Sound (Hilarious cartoon wah-wah sob)
+  playGhostfaceCry() {
+    try {
+      this.init();
+      // Descending sad trombone notes: F4, E4, Eb4, D4 with vibrato
+      const notes = [349.23, 329.63, 311.13, 270.0];
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+
+        const startT = this.ctx.currentTime + idx * 0.22;
+        const dur = idx === 3 ? 0.6 : 0.2;
+
+        osc.frequency.setValueAtTime(freq, startT);
+        if (idx === 3) {
+          // Slow sad sliding pitch downward
+          osc.frequency.linearRampToValueAtTime(freq * 0.75, startT + dur);
+        }
+
+        gain.gain.setValueAtTime(0.18, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + dur);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(600, startT);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + dur);
+      });
+    } catch (_) {}
+  }
+
+  // Mini-Game: Ghostface Dance Beat (Funky energetic synth groove)
+  playGhostfaceDance() {
+    try {
+      this.init();
+      // Upbeat funky arpeggio: C5, G5, A5, C6
+      const arpeggio = [523.25, 783.99, 880.0, 1046.5];
+      arpeggio.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+
+        const startT = this.ctx.currentTime + idx * 0.09;
+        osc.frequency.setValueAtTime(freq, startT);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.05, startT + 0.12);
+
+        gain.gain.setValueAtTime(0.24, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.18);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.18);
+      });
+    } catch (_) {}
+  }
+
+  // Mini-Game: Funny Duck Quack ("Waa-quack!")
+  playGhostfaceQuack() {
+    try {
+      this.init();
+      [380, 440].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(900, this.ctx.currentTime);
+        filter.Q.setValueAtTime(4.0, this.ctx.currentTime);
+
+        const startT = this.ctx.currentTime + idx * 0.1;
+        osc.frequency.setValueAtTime(freq, startT);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.8, startT + 0.08);
+
+        gain.gain.setValueAtTime(0.2, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.09);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.09);
+      });
+    } catch (_) {}
+  }
+
+  // Mini-Game: Knife Whoosh
+  playGhostfaceSwoosh() {
+    try {
+      this.init();
+      const noise = this.createNoiseBuffer();
+      const src = this.ctx.createBufferSource();
+      src.buffer = noise;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(2400, this.ctx.currentTime + 0.12);
+      filter.Q.setValueAtTime(3.0, this.ctx.currentTime);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      src.start();
+      src.stop(this.ctx.currentTime + 0.15);
+    } catch (_) {}
+  }
+
+  // Mini-Game: Door Crash / Kick
+  playDoorCrash() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.2);
+
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.22);
+    } catch (_) {}
+  }
+
   stopAll() {
     this.stopRain();
     this.stopWaves();

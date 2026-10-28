@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../utils/audioSynthesizer';
 import confetti from 'canvas-confetti';
+import GhostfaceRunnerGame from './GhostfaceRunnerGame';
 
 // ==========================================
 // STUDENT MOTIVATIONAL QUOTES REPOSITORY
@@ -2017,10 +2018,17 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
 // MAIN MINI-GAME STUDIO COMPONENT
 // ==========================================
 export default function MiniGameStudio({ onComplete }) {
-  const [selectedGame, setSelectedGame] = useState('bubbles'); // 'bubbles' | 'alien' | 'lotus'
+  const [selectedGame, setSelectedGame] = useState('ghostface'); // 'ghostface' | 'bubbles' | 'alien' | 'lotus'
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const games = [
+    {
+      id: 'ghostface',
+      name: 'Ghostface Door Runner 🔪',
+      icon: '👻',
+      desc: 'Pick right vs wrong door! Dance on win, cry on fail + duck cameos!',
+      badge: 'NEW • Logic Doors'
+    },
     {
       id: 'bubbles',
       name: 'Stress Bubble Pop',
@@ -2090,7 +2098,7 @@ export default function MiniGameStudio({ onComplete }) {
       </div>
 
       {/* Game Mode Selector Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {games.map(g => {
           const isActive = selectedGame === g.id;
           return (
@@ -2124,6 +2132,13 @@ export default function MiniGameStudio({ onComplete }) {
 
       {/* Active Game Viewport Container */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6 min-h-[460px]">
+        {selectedGame === 'ghostface' && (
+          <GhostfaceRunnerGame 
+            soundEnabled={soundEnabled} 
+            onSwitchGame={() => setSelectedGame('bubbles')}
+            onComplete={onComplete}
+          />
+        )}
         {selectedGame === 'bubbles' && (
           <BubblePopGame 
             soundEnabled={soundEnabled} 
@@ -2141,7 +2156,7 @@ export default function MiniGameStudio({ onComplete }) {
         {selectedGame === 'lotus' && (
           <LotusCatchGame 
             soundEnabled={soundEnabled} 
-            onSwitchGame={() => setSelectedGame('bubbles')}
+            onSwitchGame={() => setSelectedGame('ghostface')}
             onComplete={onComplete}
           />
         )}

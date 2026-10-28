@@ -38,7 +38,19 @@ Every day is structured into 4 balanced, self-paced micro-tasks:
 - **Spreadsheet Export:** 1-Click **Export to CSV** (compatible with Excel & Google Sheets) and JSON export.
 - **Search & Filter:** Instantly filter by stressor or search personal notes.
 
-### 4. 🧘 Interactive Wellness Studio
+### 4. 🎮 Zen Arcade & Mini-Games Suite
+- **👻 Ghostface Door Runner 🔪:** An energetic 60 FPS 3D-perspective corridor runner featuring Ghostface sprinting with a knife toward upcoming logic doors.
+  - **Common Sense & Logic Questions:** Answer witty riddles displayed at the top of the screen (e.g., *"What gets wetter the more it dries?"*).
+  - **Door Mechanics:** Choose between Door A and Door B (using keyboard `[A]/[D]`, arrow keys, touch, or on-screen buttons).
+  - **Victory Dance vs. Tantrum Crying:**
+    - Choose the **Correct Door**: Confetti explodes and Ghostface does a hilarious disco victory dance waving his knife in the air (`200 IQ MOVE! 🕺✨`).
+    - Choose the **Wrong Door**: Ghostface drops his knife, lays face-down on the floor, kicks his legs tantrum-style, and sobs hysterically with shooting tear fountains while displaying the explanation (`WHYYYY?! 😭💦`).
+  - **Funny Side Cameos:** Random characters (such as a cool Moonwalking Duck with sunglasses, Dancing Banana with maracas, and Chill Capybara) pop into the outer margins with funny speech bubbles without blocking gameplay.
+- **🫧 Stress Bubble Pop:** Pop away exam worries & build combo streaks.
+- **👽 Cosmic Alien Runner:** Claim donuts, muffins, and trigger 3-second Fart Boost flights!
+- **🌸 Lotus Calm Catch:** Glide to catch glowing stars & dewdrops at 60 FPS.
+
+### 5. 🧘 Interactive Wellness Studio
 - **Guided Breathing Studio:** Visual expanding animated lung/sphere with custom modes (Box Breathing, 4-7-8, Physiological Sigh) and harmonic chimes.
 - **BJ Fogg 5-Minute Study Start:** Circular animated countdown timer with ambient focus sounds and celebratory confetti.
 - **CBT 3D "Thought Flip":** Interactive 3D flip card to identify cognitive traps (catastrophizing, all-or-nothing, mind reading) and flip them into objective, empowering reframes.

@@ -264,7 +264,7 @@ export const ACTIVITY_CATALOG = [
     durationMinutes: 3,
     type: 'minigame',
     stressorSuitability: ['exam_stress', 'procrastination', 'overwhelmed', 'anxious', 'scattered', 'sleep_fatigue'],
-    description: 'Pop floating worry bubbles, stack river stones in perfect equilibrium, or catch serene droplets in this delightful stress-relief mini-game suite.',
+    description: 'Play Ghostface Door Runner with logic puzzles, pop floating worry bubbles, or catch serene droplets in this delightful stress-relief mini-game suite.',
     benefit: 'Replaces study fatigue and guilt with positive, relaxing dopamine.',
     icon: 'Gamepad2',
     interactiveComponent: 'minigame'
