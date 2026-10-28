@@ -2053,81 +2053,67 @@ export default function MiniGameStudio({ onComplete }) {
   ];
 
   return (
-    <div className="flex flex-col space-y-4 animate-fade-in pb-4">
-      {/* Mini-Game Hub Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-purple-700 to-indigo-800 text-white p-5 sm:p-7 shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5 max-w-xl">
-            <span className="text-[11px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-3 py-1 rounded-full backdrop-blur-sm inline-flex items-center space-x-1.5">
-              <Gamepad2 className="w-3.5 h-3.5" />
-              <span>MindSpring Mindful Arcade</span>
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight">
-              Stress-Buster Mini-Games
+    <div className="flex flex-col space-y-3 animate-fade-in pb-4">
+      {/* Sleek Mini-Game Header & Arcade Switcher */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-700 to-indigo-800 text-white p-3 sm:p-4 shadow-lg flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center space-x-2.5">
+          <span className="p-1.5 rounded-xl bg-white/20 text-white">
+            <Gamepad2 className="w-4 h-4" />
+          </span>
+          <div>
+            <h2 className="text-sm sm:text-base font-heading font-extrabold tracking-tight leading-none">
+              Zen Arcade 🎮
             </h2>
-            <p className="text-xs text-purple-100">
-              Need a quick study reset? Choose a game below, click <strong>Start Game</strong>, and play for a focused, timed session. When the timer ends, celebrate with your performance stats and an inspiring motivational quote!
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition backdrop-blur-sm ${
-                soundEnabled 
-                  ? 'bg-white/20 hover:bg-white/30 text-white border border-white/40' 
-                  : 'bg-black/30 text-white/60'
-              }`}
-              title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              <span>{soundEnabled ? 'Sound ON' : 'Muted'}</span>
-            </button>
-
-            {onComplete && (
-              <button
-                onClick={() => onComplete(5)}
-                className="flex items-center space-x-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-lg transition"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Save Break</span>
-              </button>
-            )}
+            <span className="text-[10px] text-purple-200">
+              Stress-Buster Mini-Games
+            </span>
           </div>
         </div>
-      </div>
 
-      {/* Game Mode Selector Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {games.map(g => {
-          const isActive = selectedGame === g.id;
-          return (
+        {/* 4 Quick Game Mode Tabs */}
+        <div className="flex items-center space-x-1 bg-black/25 p-1 rounded-xl overflow-x-auto max-w-full">
+          {games.map(g => {
+            const isActive = selectedGame === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => setSelectedGame(g.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-white text-purple-900 shadow-sm'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <span>{g.icon}</span>
+                <span>{g.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Audio Mute & Save Button */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+              soundEnabled ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-black/30 text-white/60'
+            }`}
+            title={soundEnabled ? 'Mute' : 'Unmute'}
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{soundEnabled ? 'Sound' : 'Muted'}</span>
+          </button>
+
+          {onComplete && (
             <button
-              key={g.id}
-              onClick={() => setSelectedGame(g.id)}
-              className={`p-3.5 rounded-2xl border-2 text-left transition flex items-start space-x-3 ${
-                isActive
-                  ? 'border-purple-500 bg-purple-50/70 dark:bg-purple-950/40 shadow-md ring-2 ring-purple-400/20'
-                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-slate-300'
-              }`}
+              onClick={() => onComplete(5)}
+              className="flex items-center space-x-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow transition"
             >
-              <div className="text-2xl p-2 rounded-xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
-                {g.icon}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-white">{g.name}</h4>
-                  <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold">
-                    {g.badge}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                  {g.desc}
-                </p>
-              </div>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Save Break</span>
             </button>
-          );
-        })}
+          )}
+        </div>
       </div>
 
       {/* Active Game Viewport Container */}

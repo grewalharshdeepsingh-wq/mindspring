@@ -293,6 +293,7 @@ export default function GhostfaceRunnerGame({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [chosenLane, setChosenLane] = useState(0); // -1: Left, 1: Right
   const [explanation, setExplanation] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [doorAnswers, setDoorAnswers] = useState({
     left: '',
     right: '',
@@ -408,7 +409,7 @@ export default function GhostfaceRunnerGame({
       // 1. BACKGROUND & 3D CORRIDOR RUNNER ENVIRONMENT
       // ----------------------------------------------------
       const vpX = width / 2;
-      const vpY = height * 0.28;
+      const vpY = height * 0.25;
 
       // Dark atmospheric gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
@@ -767,66 +768,60 @@ export default function GhostfaceRunnerGame({
   };
 
   return (
-    <div className="flex flex-col space-y-4 animate-fade-in max-w-4xl mx-auto">
+    <div className={isFullscreen 
+      ? "fixed inset-0 z-50 bg-slate-950 flex flex-col justify-center items-center p-2 sm:p-4 overflow-y-auto" 
+      : "relative rounded-2xl overflow-hidden shadow-xl border-2 border-emerald-500/40 bg-slate-950 flex flex-col max-w-4xl mx-auto w-full animate-fade-in"
+    }>
       
-      {/* Top Banner / Question Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 border-2 border-emerald-500/40 p-4 sm:p-5 text-white shadow-xl">
-        <div className="flex items-center justify-between pb-2 border-b border-white/10 text-xs">
-          <div className="flex items-center space-x-2">
-            <span className="bg-emerald-500/20 text-emerald-300 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center space-x-1">
-              <span>👻 Ghostface Door Runner 🔪</span>
-            </span>
-            <span className="text-slate-400 font-semibold hidden sm:inline">
-              Question #{questionIndex + 1}
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1 text-amber-300 font-mono font-bold">
-              <Trophy className="w-3.5 h-3.5" />
-              <span>Score: {score}</span>
-            </div>
-            {streak > 1 && (
-              <span className="bg-amber-500/30 text-amber-300 font-bold px-2 py-0.5 rounded-full text-[10px] animate-pulse">
-                🔥 {streak}x Streak
-              </span>
-            )}
-            <span className="text-slate-400 text-[11px] hidden md:inline">
-              High: {highScore}
-            </span>
-          </div>
-        </div>
-
-        {/* The Logic Question Card */}
-        <div className="pt-3 text-center space-y-1">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90 block">
-            🧠 General Logic & Common Sense Riddle
+      {/* 1. TOP QUESTION & HUD BAR (Integrated in single compact 48px header) */}
+      <div className="bg-slate-900 border-b border-emerald-500/30 px-3 sm:px-4 py-2 text-white flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md w-full">
+        <div className="flex items-center space-x-2 text-xs truncate max-w-full">
+          <span className="bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-lg border border-emerald-500/30 whitespace-nowrap shrink-0">
+            👻 Q#{questionIndex + 1}
           </span>
-          <h3 className="text-base sm:text-xl font-heading font-extrabold text-white leading-snug drop-shadow-md">
+          <h3 className="font-heading font-extrabold text-xs sm:text-sm text-amber-200 tracking-wide truncate" title={LOGIC_QUESTIONS[questionIndex % LOGIC_QUESTIONS.length].question}>
             "{LOGIC_QUESTIONS[questionIndex % LOGIC_QUESTIONS.length].question}"
           </h3>
         </div>
 
-        {/* Approaching Distance Bar */}
-        {gameState === 'running' && (
-          <div className="mt-3 w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-emerald-400 to-teal-300 h-full transition-all duration-75"
-              style={{ width: `${Math.max(0, 100 - gRef.current.distance)}%` }}
-            />
+        <div className="flex items-center space-x-3 text-xs shrink-0 font-mono">
+          <div className="flex items-center space-x-1 text-emerald-400 font-bold">
+            <Trophy className="w-3.5 h-3.5" />
+            <span>{score} pts</span>
           </div>
-        )}
+          {streak > 1 && (
+            <span className="bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-lg text-[10px] animate-pulse">
+              🔥 {streak}x
+            </span>
+          )}
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Focus Mode"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
-      {/* Main Game Canvas Viewport */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-slate-700 bg-slate-950 flex flex-col items-center justify-center">
+      {/* 2. SLIM APPROACHING DISTANCE BAR */}
+      {gameState === 'running' && (
+        <div className="w-full bg-slate-800/80 h-1 overflow-hidden">
+          <div 
+            className="bg-gradient-to-r from-emerald-400 to-teal-300 h-full transition-all duration-75"
+            style={{ width: `${Math.max(0, 100 - gRef.current.distance)}%` }}
+          />
+        </div>
+      )}
+
+      {/* 3. MAIN GAME CANVAS VIEWPORT */}
+      <div className="relative w-full bg-slate-950 flex flex-col items-center justify-center overflow-hidden">
         <canvas
           ref={canvasRef}
           width={760}
-          height={460}
-          className="w-full h-auto max-h-[500px] object-contain cursor-pointer select-none"
+          height={350}
+          className="w-full h-auto max-h-[360px] object-contain cursor-pointer select-none"
           onClick={(e) => {
-            // Click left half -> steer left; click right half -> steer right
             const rect = e.currentTarget.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             if (clickX < rect.width / 2) {
@@ -839,57 +834,43 @@ export default function GhostfaceRunnerGame({
 
         {/* Start / Idle Overlay */}
         {gameState === 'idle' && (
-          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fade-in">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-4xl shadow-lg shadow-emerald-500/20">
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-3 animate-fade-in z-20">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-3xl shadow-lg">
               👻🔪
             </div>
             
-            <div className="space-y-1.5 max-w-md">
-              <h3 className="text-2xl font-heading font-extrabold text-white">
+            <div className="space-y-1 max-w-md">
+              <h3 className="text-xl font-heading font-extrabold text-white">
                 Ghostface Logic Door Runner
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Ghostface is sprinting with a knife! Look at the common sense question at the top and steer into the <strong>CORRECT door</strong>.
+              <p className="text-xs text-slate-300">
+                Steer into the <strong>CORRECT door</strong> to make Ghostface dance! Choose the wrong door and he lays down crying! 🦆
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-left max-w-sm w-full text-xs text-slate-300">
-              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl">
-                <span className="font-bold text-emerald-400 block pb-1">✅ Right Answer:</span>
-                Ghostface does a hilarious victory dance with his knife! 🕺
-              </div>
-              <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-2xl">
-                <span className="font-bold text-rose-400 block pb-1">❌ Wrong Answer:</span>
-                Ghostface drops his knife, lays down and cries hysterically! 😭
-              </div>
-            </div>
-
-            <p className="text-[11px] text-amber-300 font-semibold">
-              🦆 Watch out for funny side cameos (like the Moonwalking Duck) that pop in to cheer you on!
-            </p>
-
             <button
               onClick={handleStartGame}
-              className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-heading font-extrabold text-sm rounded-2xl shadow-xl shadow-emerald-500/25 transition transform hover:scale-105 active:scale-95 flex items-center space-x-2"
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-heading font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center space-x-2"
             >
-              <Play className="w-4 h-4 fill-current" />
+              <Play className="w-3.5 h-3.5 fill-current" />
               <span>START SPRINTING! 🔪</span>
             </button>
           </div>
         )}
 
-        {/* Live Feedback Toast for Dancing / Crying */}
+        {/* Dancing Toast Overlay */}
         {gameState === 'dancing' && (
-          <div className="absolute top-4 bg-emerald-600/90 text-white px-5 py-2 rounded-2xl font-bold text-sm shadow-xl flex items-center space-x-2 animate-bounce border border-emerald-300">
+          <div className="absolute top-2 bg-emerald-600/90 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow-xl flex items-center space-x-1.5 animate-bounce border border-emerald-300 z-20">
             <span>🎉 CORRECT! 200 IQ MOVE! DANCE PARTY! 🕺✨</span>
           </div>
         )}
 
+        {/* Crying Toast Overlay */}
         {gameState === 'crying' && (
-          <div className="absolute top-4 bg-rose-700/95 text-white p-3 sm:px-6 rounded-2xl font-bold text-xs sm:text-sm shadow-xl text-center space-y-1 animate-pulse border-2 border-rose-400 max-w-md">
+          <div className="absolute top-2 bg-rose-700/95 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow-xl text-center space-y-0.5 animate-pulse border border-rose-400 max-w-sm z-20">
             <div>😭 WRONG DOOR! GHOSTFACE IS SOBBING! 💦</div>
             {explanation && (
-              <p className="text-[11px] font-medium text-rose-100">
+              <p className="text-[10px] font-medium text-rose-100">
                 💡 Truth: {explanation}
               </p>
             )}
@@ -897,101 +878,94 @@ export default function GhostfaceRunnerGame({
         )}
       </div>
 
-      {/* Interactive Controls & Door Selector Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* 4. SLEEK INTEGRATED DOOR ANSWER BUTTONS (Directly beneath canvas, 38px height) */}
+      <div className="grid grid-cols-2 gap-2 p-2 bg-slate-900 border-t border-slate-800 w-full">
         {/* Left Door Button */}
         <button
           onClick={() => steerTo(-1)}
-          className={`p-4 rounded-2xl border-2 transition text-left flex items-center justify-between shadow-md ${
+          className={`py-2 px-3 rounded-xl border-2 transition text-left flex items-center justify-between ${
             chosenLane === -1
-              ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-400/40'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-400'
+              ? 'bg-blue-600/30 border-blue-400 text-white ring-2 ring-blue-400/40'
+              : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-blue-400'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <span className="w-8 h-8 rounded-xl bg-blue-500 text-white font-extrabold text-sm flex items-center justify-center shrink-0">
+          <div className="flex items-center space-x-2 truncate">
+            <span className="w-5 h-5 rounded-lg bg-blue-500 text-white font-extrabold text-[11px] flex items-center justify-center shrink-0">
               A
             </span>
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
-                [LEFT DOOR]
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white">
-                {doorAnswers.left || 'Door A'}
-              </span>
-            </div>
+            <span className="text-xs font-bold truncate">
+              {doorAnswers.left || 'Door A'}
+            </span>
           </div>
-          <ArrowLeft className={`w-5 h-5 ${chosenLane === -1 ? 'text-blue-500' : 'text-slate-400'}`} />
+          <ArrowLeft className={`w-4 h-4 shrink-0 ${chosenLane === -1 ? 'text-blue-400' : 'text-slate-500'}`} />
         </button>
 
         {/* Right Door Button */}
         <button
           onClick={() => steerTo(1)}
-          className={`p-4 rounded-2xl border-2 transition text-left flex items-center justify-between shadow-md ${
+          className={`py-2 px-3 rounded-xl border-2 transition text-left flex items-center justify-between ${
             chosenLane === 1
-              ? 'bg-purple-600/20 border-purple-500 ring-2 ring-purple-400/40'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-400'
+              ? 'bg-purple-600/30 border-purple-400 text-white ring-2 ring-purple-400/40'
+              : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-purple-400'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <span className="w-8 h-8 rounded-xl bg-purple-500 text-white font-extrabold text-sm flex items-center justify-center shrink-0">
+          <div className="flex items-center space-x-2 truncate">
+            <span className="w-5 h-5 rounded-lg bg-purple-500 text-white font-extrabold text-[11px] flex items-center justify-center shrink-0">
               B
             </span>
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 block">
-                [RIGHT DOOR]
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white">
-                {doorAnswers.right || 'Door B'}
-              </span>
-            </div>
+            <span className="text-xs font-bold truncate">
+              {doorAnswers.right || 'Door B'}
+            </span>
           </div>
-          <ArrowRight className={`w-5 h-5 ${chosenLane === 1 ? 'text-purple-500' : 'text-slate-400'}`} />
+          <ArrowRight className={`w-4 h-4 shrink-0 ${chosenLane === 1 ? 'text-purple-400' : 'text-slate-500'}`} />
         </button>
       </div>
 
-      {/* Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-100 dark:bg-slate-900 p-3 rounded-2xl text-xs">
-        <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-          <span>Keyboard: <strong>[A] / [←]</strong> Left • <strong>[D] / [→]</strong> Right</span>
-        </div>
+      {/* 5. MICRO TOOLBAR (Quick actions & hints) */}
+      <div className="px-3 py-1.5 bg-slate-950 text-slate-400 text-[11px] flex items-center justify-between w-full">
+        <span className="hidden sm:inline">
+          Controls: <strong>[A]/[←]</strong> Left • <strong>[D]/[→]</strong> Right • <strong>[Space]</strong> Rush
+        </span>
+        <span className="sm:hidden">
+          Tap Door A or B to steer!
+        </span>
 
         <div className="flex items-center space-x-2">
           {gameState === 'running' && (
             <button
               onClick={handleRushDoor}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition"
+              className="px-2.5 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg border border-amber-500/30 transition flex items-center space-x-1"
               title="Rush forward into chosen door"
             >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Rush Door ⚡</span>
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>Rush ⚡</span>
             </button>
           )}
 
           <button
             onClick={handleStartGame}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition"
+            className="px-2 py-0.5 text-slate-400 hover:text-white transition flex items-center space-x-1"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3 h-3" />
             <span>Restart</span>
           </button>
 
           {onSwitchGame && (
             <button
               onClick={onSwitchGame}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition"
+              className="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 transition"
             >
-              <span>Other Games</span>
+              Other Games
             </button>
           )}
 
           {onComplete && (
             <button
               onClick={() => onComplete(5)}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition"
+              className="px-2 py-0.5 text-teal-400 hover:text-teal-300 transition flex items-center space-x-1"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Save Break</span>
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Save</span>
             </button>
           )}
         </div>
@@ -1050,15 +1024,22 @@ function drawDoor(ctx, x, y, w, h, label, text, primaryColor, darkColor, prog) {
   ctx.fillText(label, 0, -panelH * 0.35);
 
   // Answer Text written on door
-  if (prog > 0.35) {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${Math.max(9, Math.floor(13 * prog))}px sans-serif`;
+  if (prog > 0.16) {
+    const fontSize = Math.max(9, Math.floor(13 * prog));
+    ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
+    // High contrast background pill for instant answer readability
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.8)';
+    ctx.beginPath();
+    ctx.roundRect(-panelW * 0.46, -panelH * 0.08, panelW * 0.92, panelH * 0.42, 4);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
     // Wrap text into 2 lines if needed
     const words = (text || '').split(' ');
-    if (words.length > 2 && text.length > 14) {
+    if (words.length > 2 && text.length > 12) {
       const mid = Math.ceil(words.length / 2);
       const l1 = words.slice(0, mid).join(' ');
       const l2 = words.slice(mid).join(' ');
