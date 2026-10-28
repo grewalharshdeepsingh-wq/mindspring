@@ -57,6 +57,7 @@ export default function DailyPlanView({
   onRerollActivity,
   onResetActivity,
   onOpenCheckIn,
+  onNavigateToSolver,
   completedCount = 0
 }) {
   const allDone = plan.length > 0 && plan.every(p => p.completed || p.skipped);
@@ -112,6 +113,37 @@ export default function DailyPlanView({
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
         <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-teal-400/20 rounded-full blur-2xl" />
       </div>
+
+      {/* Problem Solver Feature Card */}
+      {onNavigateToSolver && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-cyan-500/10 border border-teal-200 dark:border-teal-800/60 text-slate-800 dark:text-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0 shadow-sm">
+              <Sparkles className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h4 className="font-heading font-extrabold text-sm text-slate-800 dark:text-white">
+                  Feeling stuck, anxious, or facing a specific dilemma?
+                </h4>
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-extrabold px-2 py-0.5 rounded-full">
+                  NEW
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Use the <strong>Problem Solver & Motivator</strong> to get an instant root-cause analysis, a clear 3-step action plan, and personalized audio encouragement.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onNavigateToSolver}
+            className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition whitespace-nowrap flex items-center space-x-1.5 shrink-0"
+          >
+            <span>Solve My Problem 💡</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Non-competitive reassurance alert banner */}
       <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">

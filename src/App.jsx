@@ -10,6 +10,7 @@ import PrivacySettingsModal from './components/PrivacySettingsModal';
 import CheckInModal from './components/CheckInModal';
 import ActivityRunnerModal from './components/ActivityRunnerModal';
 import MiniGameStudio from './components/MiniGameStudio';
+import ProblemSolver from './components/ProblemSolver';
 import { loadMindSpringVault, saveMindSpringVault } from './utils/storage';
 import { generateDailyPlan, ACTIVITY_CATALOG } from './data/activityCatalog';
 import { ShieldAlert, Sparkles, Heart } from 'lucide-react';
@@ -158,6 +159,12 @@ export default function App() {
     updateVault({ ...vault, gardenFlowers: updatedFlowers });
   };
 
+  // Add custom action item to daily plan
+  const handleAddActionToDailyPlan = (task) => {
+    const updatedPlan = [task, ...(vault.dailyPlan || [])];
+    updateVault({ ...vault, dailyPlan: updatedPlan });
+  };
+
   // Weekly Reflection adding
   const handleAddReflection = (reflection) => {
     const updatedJournal = [reflection, ...(vault.reflectionJournal || [])];
@@ -202,7 +209,18 @@ export default function App() {
               onStartActivity={handleStartActivity}
               onRerollActivity={handleRerollActivity}
               onOpenCheckIn={() => setIsCheckInOpen(true)}
+              onNavigateToSolver={() => setActiveTab('solver')}
               completedCount={completedCount}
+            />
+          )}
+
+          {activeTab === 'solver' && (
+            <ProblemSolver
+              studentName={vault.studentProfile?.name}
+              onStartActivity={handleStartActivity}
+              onAddToDailyPlan={handleAddActionToDailyPlan}
+              onSaveReflection={handleAddReflection}
+              onOpenCrisis={() => setIsCrisisOpen(true)}
             />
           )}
 

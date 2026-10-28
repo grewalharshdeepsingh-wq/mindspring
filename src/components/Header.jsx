@@ -7,10 +7,11 @@ import {
   Headphones, 
   BarChart3, 
   Lock, 
-  Feather,
-  Table,
-  User,
-  Gamepad2
+  Feather, 
+  Table, 
+  User, 
+  Gamepad2,
+  Lightbulb
 } from 'lucide-react';
 
 export default function Header({ 
@@ -24,6 +25,7 @@ export default function Header({
 }) {
   const navItems = [
     { id: 'plan', label: 'Daily Plan', icon: Calendar },
+    { id: 'solver', label: 'Problem Solver 💡', icon: Lightbulb },
     { id: 'studio', label: 'Wellness Studio', icon: Feather },
     { id: 'minigame', label: 'Zen Arcade 🎮', icon: Gamepad2 },
     { id: 'table', label: 'Data & Progress', icon: Table },
@@ -109,9 +111,9 @@ export default function Header({
           </button>
         </div>
 
-        {/* Full-Width Navigation Bar: Fits all 8 options on laptop without side scrolling */}
+        {/* Full-Width Navigation Bar */}
         <nav className="pt-2">
-          <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-1 w-full">
+          <div className="flex flex-wrap xl:flex-nowrap items-center justify-between gap-1 w-full overflow-x-auto pb-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;

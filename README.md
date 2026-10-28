@@ -13,7 +13,19 @@ Rather than offering generic meditation advice, MindSpring uses a **deterministi
 - **Cause-Based Diagnosis:** Choose primary root stressor (Exam & Revision Overwhelm, Task Avoidance & Procrastination, Fear of Failure, Social Comparison, Family Expectations, Sleep Debt, Social Friction).
 - **Micro-Goal Target:** Pick or write a small, concrete victory for the day.
 
-### 2. 📋 Balanced 4-Part Daily Regimen
+### 2. 💡 Empathetic Problem Solver & Daily Motivator
+- **Brief Problem Understanding:** Students can type any dilemma in their own words or select common scenarios (exam backlog, procrastination paralysis, bad grades & parental expectations, peer exclusion, burnout). The intelligent engine breaks down the biological and cognitive root cause and validates the student's feelings without judgment.
+- **Actionable 3-Tier Solution:**
+  - ⚡ **Immediate 5-Minute Relief:** Friction-free triage action to calm the nervous system or break task freeze right now.
+  - 🎯 **Step-by-Step Strategic Roadmap:** Phased tactical plan to realistically conquer the challenge.
+  - 🛠️ **Direct Tool Integration:** Immediate launch button for recommended tools (Box Breathing, 5-Min Study Sprint, Thought Flip, etc.).
+- **High-Impact Motivation & Pep Talk:**
+  - Personalized, uplifting pep talk tailored to their exact issue.
+  - **🌟 Golden Power Affirmation:** Memorable mindset anchor.
+  - **🔊 Audio Narration (Web Speech API):** Listen to the encouraging words spoken aloud with play/pause controls.
+  - **1-Click Actions:** Add the action item directly into the Daily Plan, save the breakthrough to the Growth Journal, copy the solution to clipboard, or revisit past solved problems in the History drawer.
+
+### 3. 📋 Balanced 4-Part Daily Regimen
 Every day is structured into 4 balanced, self-paced micro-tasks:
 1. **Stress-Relief Activity:** (e.g., Box Breathing, 4-7-8 Parasympathetic breath, 5-4-3-2-1 Grounding, Progressive Muscle Relaxation)
 2. **Growth Activity:** (e.g., BJ Fogg 5-Minute Study Start, CBT "Thought Flip" Reality Check, Self-Compassion letter)

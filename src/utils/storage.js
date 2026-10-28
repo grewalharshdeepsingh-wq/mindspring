@@ -66,6 +66,7 @@ const DEFAULT_DATA = {
   ],
   mindfulDaysCount: 1,
   completedActivitiesTotal: 4,
+  problemHistory: [],
   lastActiveDate: new Date().toISOString().split('T')[0],
 };
 
