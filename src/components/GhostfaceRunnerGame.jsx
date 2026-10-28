@@ -14,13 +14,18 @@ import {
   Play,
   Pause,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Clock,
+  Timer,
+  Target,
+  Award,
+  Sparkles
 } from 'lucide-react';
 import { soundEngine } from '../utils/audioSynthesizer';
 import confetti from 'canvas-confetti';
 
 // ==========================================
-// 40+ GENERAL LOGIC & COMMON SENSE QUESTIONS
+// 65+ GENERAL LOGIC & COMMON SENSE QUESTIONS
 // ==========================================
 export const LOGIC_QUESTIONS = [
   {
@@ -267,8 +272,242 @@ export const LOGIC_QUESTIONS = [
     correct: "A window",
     wrong: "X-ray goggles",
     explanation: "A glass window built into a wall lets you look right through!"
+  },
+  {
+    id: 36,
+    question: "What has a bark, but no bite?",
+    correct: "A tree",
+    wrong: "A puppy",
+    explanation: "A tree trunk has wooden bark, but never bites!"
+  },
+  {
+    id: 37,
+    question: "What belongs to you, but everyone else uses it more than you do?",
+    correct: "Your name",
+    wrong: "Your phone",
+    explanation: "Your friends and family say your name far more than you do!"
+  },
+  {
+    id: 38,
+    question: "A plane crashes on the exact border of US and Canada. Where do they bury survivors?",
+    correct: "You don't bury survivors!",
+    wrong: "In Canada",
+    explanation: "Survivors are alive! You don't bury living people!"
+  },
+  {
+    id: 39,
+    question: "How can a human go 8 days without any sleep?",
+    correct: "They sleep at night!",
+    wrong: "Lots of coffee",
+    explanation: "They sleep every night during the 8 days!"
+  },
+  {
+    id: 40,
+    question: "What has teeth, but cannot bite or chew?",
+    correct: "A comb",
+    wrong: "A zipper",
+    explanation: "A hair comb has plastic/metal teeth to detangle hair, but no mouth!"
+  },
+  {
+    id: 41,
+    question: "What has four wheels and flies?",
+    correct: "A garbage truck",
+    wrong: "An airplane",
+    explanation: "A garbage truck has 4 wheels and attracts insect flies!"
+  },
+  {
+    id: 42,
+    question: "What runs, but never walks; has a bed, but never sleeps; has a mouth, but never talks?",
+    correct: "A river",
+    wrong: "A cheetah",
+    explanation: "A river has a riverbed, river mouth, and running water!"
+  },
+  {
+    id: 43,
+    question: "What gets bigger the more you take away from it?",
+    correct: "A hole",
+    wrong: "A balloon",
+    explanation: "The more dirt you dig away, the bigger the hole becomes!"
+  },
+  {
+    id: 44,
+    question: "If you drop a white hat into the Red Sea, what does it become?",
+    correct: "Wet!",
+    wrong: "Pink",
+    explanation: "Water makes clothes wet, not dyed by sea names!"
+  },
+  {
+    id: 45,
+    question: "What has a head and a tail, but no body?",
+    correct: "A coin",
+    wrong: "A snake",
+    explanation: "A coin has 'heads' and 'tails', but zero torso!"
+  },
+  {
+    id: 46,
+    question: "What is black when you buy it, red when you use it, and gray when you throw it away?",
+    correct: "Charcoal",
+    wrong: "A candle",
+    explanation: "Charcoal burns red-hot and turns into gray ash when finished!"
+  },
+  {
+    id: 47,
+    question: "What can you break, even if you never pick it up or drop it?",
+    correct: "A promise",
+    wrong: "A glass cup",
+    explanation: "Breaking someone's trust or a promise requires no physical touch!"
+  },
+  {
+    id: 48,
+    question: "What has words, but never speaks a sound?",
+    correct: "A book",
+    wrong: "A mime",
+    explanation: "A book is full of written words, but produces no sound!"
+  },
+  {
+    id: 49,
+    question: "What building has the most stories in the entire world?",
+    correct: "The library!",
+    wrong: "Burj Khalifa",
+    explanation: "A library contains thousands of book stories!"
+  },
+  {
+    id: 50,
+    question: "What has 13 hearts, but zero other organs or veins?",
+    correct: "A deck of cards",
+    wrong: "An octopus",
+    explanation: "A deck of playing cards contains 13 cards of the Hearts suit!"
+  },
+  {
+    id: 51,
+    question: "What is always coming, but never actually arrives?",
+    correct: "Tomorrow",
+    wrong: "Summer vacation",
+    explanation: "When it arrives, it is today, never tomorrow!"
+  },
+  {
+    id: 52,
+    question: "What can run all day without ever getting tired or breathing?",
+    correct: "A refrigerator",
+    wrong: "A marathon runner",
+    explanation: "A refrigerator runs on electricity all day long!"
+  },
+  {
+    id: 53,
+    question: "What has a bottom at the very top?",
+    correct: "Your legs",
+    wrong: "A coffee mug",
+    explanation: "Your bottom/hips sit at the very top of your legs!"
+  },
+  {
+    id: 54,
+    question: "What has a ring, but has no finger to wear it?",
+    correct: "A telephone",
+    wrong: "Saturn",
+    explanation: "A phone rings when called!"
+  },
+  {
+    id: 55,
+    question: "What kind of band never plays musical instruments?",
+    correct: "A rubber band",
+    wrong: "A jazz band",
+    explanation: "An elastic rubber band holds items together, no melodies!"
+  },
+  {
+    id: 56,
+    question: "What has a spine, but zero bones inside?",
+    correct: "A book",
+    wrong: "A jellyfish",
+    explanation: "The binding spine of a book holds its pages together!"
+  },
+  {
+    id: 57,
+    question: "How many seconds are there in one calendar year?",
+    correct: "12 (Jan 2nd, Feb 2nd...)",
+    wrong: "31,536,000",
+    explanation: "Every month has a 'second' day: Jan 2nd, Feb 2nd... total 12!"
+  },
+  {
+    id: 58,
+    question: "What goes up and down continuously without moving an inch?",
+    correct: "The stairs",
+    wrong: "A yo-yo",
+    explanation: "A staircase goes up and down, but stays physically fixed in place!"
+  },
+  {
+    id: 59,
+    question: "What can you hold without ever touching it with your physical hands?",
+    correct: "A conversation",
+    wrong: "An ice cube",
+    explanation: "You can hold a conversation or a grudge with your mind!"
+  },
+  {
+    id: 60,
+    question: "If there are 6 oranges and you take 4 away, how many oranges do YOU have?",
+    correct: "4 oranges",
+    wrong: "2 oranges",
+    explanation: "You took 4 oranges, so you physically hold 4 oranges!"
+  },
+  {
+    id: 61,
+    question: "The person who makes it sells it; the buyer doesn't use it; the user never knows. What is it?",
+    correct: "A coffin",
+    wrong: "A birthday cake",
+    explanation: "A coffin is made to be sold, bought for someone else, and the deceased user doesn't know!"
+  },
+  {
+    id: 62,
+    question: "I speak without a mouth and hear without ears. I come alive with wind. What am I?",
+    correct: "An echo",
+    wrong: "A radio",
+    explanation: "An acoustic sound echo bounces off walls and rocks without living organs!"
+  },
+  {
+    id: 63,
+    question: "What loses its head in the morning and gets it back every night?",
+    correct: "A pillow",
+    wrong: "A turtle",
+    explanation: "You take your head off the pillow in the morning and rest it back at night!"
+  },
+  {
+    id: 64,
+    question: "Which weighs more: a pound of gold or a pound of feathers?",
+    correct: "They weigh the same!",
+    wrong: "Gold is heavier",
+    explanation: "A pound is always a pound, regardless of the material!"
+  },
+  {
+    id: 65,
+    question: "What has three feet, but no toes and cannot run?",
+    correct: "A yardstick",
+    wrong: "A tripod",
+    explanation: "A yardstick measures exactly 3 feet in length!"
+  },
+  {
+    id: 66,
+    question: "What has a single horn and gives milk?",
+    correct: "A milk truck",
+    wrong: "A unicorn",
+    explanation: "A dairy milk delivery truck has a horn to honk and delivers milk!"
   }
 ];
+
+// Helper: Fisher-Yates array randomizer
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Helper: Format seconds to mm:ss
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
 
 export default function GhostfaceRunnerGame({ 
   soundEnabled = true, 
@@ -286,11 +525,27 @@ export default function GhostfaceRunnerGame({
     }
   });
 
+  // Game configuration
+  const [selectedDuration, setSelectedDuration] = useState(60); // 60s or 90s
+
   // Game flow states
   const [gameState, setGameState] = useState('idle'); // 'idle' | 'running' | 'dancing' | 'crying' | 'gameover'
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+
+  // Time Run States
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [runTime, setRunTime] = useState(0);
+  const [timeBonusText, setTimeBonusText] = useState(null);
+
+  // Shuffled Questions Queue for unique order every run
+  const shuffledDeckRef = useRef([]);
+  const currentQIndexRef = useRef(0);
+  const [currentQuestion, setCurrentQuestion] = useState(LOGIC_QUESTIONS[0]);
+
   const [chosenLane, setChosenLane] = useState(0); // -1: Left, 1: Right
   const [explanation, setExplanation] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -300,7 +555,7 @@ export default function GhostfaceRunnerGame({
     correctLane: -1 // -1 for left, 1 for right
   });
 
-  // Live mutable game values for 60 FPS animation loop
+  // Live mutable values for 60 FPS requestAnimationFrame canvas loop
   const gRef = useRef({
     distance: 100, // 100% to 0% as doors approach
     speed: 0.38,   // speed of approach
@@ -325,11 +580,13 @@ export default function GhostfaceRunnerGame({
     nextSideCharDelay: 250 // frames until next funny cameo
   });
 
-  // Shuffle & prepare next question
+  // Prepare next question from the randomized run deck
   const prepareQuestion = useCallback((qIdx) => {
-    const q = LOGIC_QUESTIONS[qIdx % LOGIC_QUESTIONS.length];
+    const deck = shuffledDeckRef.current.length > 0 ? shuffledDeckRef.current : LOGIC_QUESTIONS;
+    const q = deck[qIdx % deck.length];
     const isLeftCorrect = Math.random() > 0.5;
 
+    setCurrentQuestion(q);
     setDoorAnswers({
       left: isLeftCorrect ? q.correct : q.wrong,
       right: isLeftCorrect ? q.wrong : q.correct,
@@ -338,7 +595,7 @@ export default function GhostfaceRunnerGame({
 
     gRef.current.distance = 100;
     gRef.current.doorPassed = false;
-    gRef.current.speed = Math.min(0.55, 0.34 + Math.floor(score / 500) * 0.04);
+    gRef.current.speed = Math.min(0.55, 0.35 + Math.floor(score / 500) * 0.04);
   }, [score]);
 
   // Handle Lane Steering
@@ -351,21 +608,57 @@ export default function GhostfaceRunnerGame({
     }
   }, [gameState, soundEnabled]);
 
-  // Start / Restart Game
+  // Start / Restart Game with Fresh Shuffled Questions
   const handleStartGame = () => {
+    // 1. Generate a completely fresh shuffled deck for this run
+    const freshlyShuffled = shuffleArray(LOGIC_QUESTIONS);
+    shuffledDeckRef.current = freshlyShuffled;
+    currentQIndexRef.current = 0;
+
+    // 2. Reset scores and run stats
     setScore(0);
     setStreak(0);
-    setQuestionIndex(0);
+    setBestStreak(0);
+    setCorrectCount(0);
+    setWrongCount(0);
     setExplanation('');
+    setTimeBonusText(null);
+    setRunTime(0);
+    setTimeLeft(selectedDuration);
+
     setChosenLane(-1);
     gRef.current.targetLane = -1;
     gRef.current.playerX = -1;
     gRef.current.distance = 100;
     gRef.current.particles = [];
     gRef.current.tears = [];
+
+    // 3. Prepare first randomized question
     prepareQuestion(0);
     setGameState('running');
   };
+
+  // 1-second interval for Time Runs countdown
+  useEffect(() => {
+    let interval = null;
+    if (gameState === 'running' || gameState === 'dancing' || gameState === 'crying') {
+      interval = setInterval(() => {
+        setRunTime(r => r + 1);
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            // Time is UP: End the run!
+            setGameState('gameover');
+            try {
+              confetti({ particleCount: 80, spread: 75, origin: { y: 0.5 } });
+            } catch (_) {}
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [gameState]);
 
   // Keyboard controls
   useEffect(() => {
@@ -396,7 +689,6 @@ export default function GhostfaceRunnerGame({
       const g = gRef.current;
       g.animTime += 1;
 
-      // Handle Canvas size & HiDPI scaling
       const width = canvas.width;
       const height = canvas.height;
 
@@ -475,7 +767,6 @@ export default function GhostfaceRunnerGame({
       // ----------------------------------------------------
       // 2. RANDOM FUNNY SIDE CHARACTERS (DUCK, BANANA, ETC.)
       // ----------------------------------------------------
-      // "add random characters such as a duck appear suddenly on the side without bloking the game and so a funny action"
       g.nextSideCharDelay -= 1;
       if (g.nextSideCharDelay <= 0 && !g.sideChar.active && gameState === 'running') {
         const types = ['duck_glasses', 'duck_flip', 'banana', 'capybara'];
@@ -487,7 +778,7 @@ export default function GhostfaceRunnerGame({
           type: chosenType,
           side: side,
           y: height * 0.52 + Math.random() * (height * 0.25),
-          timer: 160, // ~2.6s
+          timer: 160,
           speech: chosenType.startsWith('duck') ? 'QUACK! 🦆🕶️' :
                   chosenType === 'banana' ? 'PEANUT BUTTER! 🍌' : 'STAY CHILL 🍊'
         };
@@ -501,7 +792,6 @@ export default function GhostfaceRunnerGame({
         g.sideChar.timer -= 1;
         const sc = g.sideChar;
         const isLeft = sc.side === 'left';
-        // Always drawn on outer margin sidewalk (outside trackBotW)
         const charX = isLeft 
           ? width * 0.08 + Math.sin(g.animTime * 0.1) * 8 
           : width * 0.92 - Math.sin(g.animTime * 0.1) * 8;
@@ -510,9 +800,7 @@ export default function GhostfaceRunnerGame({
         ctx.save();
         ctx.translate(charX, charY);
 
-        // Action Animation based on character type
         if (sc.type.startsWith('duck')) {
-          // Draw Funny Cartoon Duck
           const bob = Math.sin(g.animTime * 0.3) * 6;
           // Duck Yellow Body
           ctx.fillStyle = '#facc15';
@@ -540,14 +828,13 @@ export default function GhostfaceRunnerGame({
           ctx.closePath();
           ctx.fill();
 
-          // Cool Sunglasses or Tiny Hat
+          // Sunglasses or Hat
           if (sc.type === 'duck_glasses') {
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(isLeft ? 4 : -14, bob - 15, 12, 6);
             ctx.fillStyle = '#38bdf8';
             ctx.fillRect(isLeft ? 6 : -12, bob - 14, 3, 2);
           } else {
-            // Tiny Top Hat
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(isLeft ? 5 : -15, bob - 24, 10, 8);
             ctx.fillRect(isLeft ? 2 : -18, bob - 17, 16, 3);
@@ -559,13 +846,12 @@ export default function GhostfaceRunnerGame({
           ctx.ellipse(isLeft ? -4 : 4, bob + Math.sin(g.animTime * 0.4) * 4, 10, 6, isLeft ? -0.3 : 0.3, 0, Math.PI * 2);
           ctx.fill();
 
-          // Little Orange Webbed Feet
+          // Feet
           ctx.fillStyle = '#ea580c';
           ctx.fillRect(-8, bob + 13, 6, 4);
           ctx.fillRect(2, bob + 13, 6, 4);
 
         } else if (sc.type === 'banana') {
-          // Dancing Banana with Maracas
           const rot = Math.sin(g.animTime * 0.25) * 0.35;
           ctx.rotate(rot);
           ctx.fillStyle = '#facc15';
@@ -575,30 +861,26 @@ export default function GhostfaceRunnerGame({
           ctx.strokeStyle = '#facc15';
           ctx.stroke();
 
-          // Cute face
           ctx.fillStyle = '#0f172a';
           ctx.beginPath();
           ctx.arc(-3, -3, 2, 0, Math.PI * 2);
           ctx.arc(3, -3, 2, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          // Chill Capybara with Orange on head
           ctx.fillStyle = '#92400e';
           ctx.beginPath();
           ctx.roundRect(-16, -8, 32, 20, 8);
           ctx.fill();
-          // Head
           ctx.beginPath();
           ctx.roundRect(isLeft ? 4 : -20, -18, 18, 14, 6);
           ctx.fill();
-          // Orange on head
           ctx.fillStyle = '#f97316';
           ctx.beginPath();
           ctx.arc(isLeft ? 13 : -11, -22, 5, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Funny Speech Bubble Above Side Character
+        // Speech Bubble
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.roundRect(-36, -45, 72, 18, 6);
@@ -612,14 +894,13 @@ export default function GhostfaceRunnerGame({
 
         if (sc.timer <= 0) {
           sc.active = false;
-          g.nextSideCharDelay = 300 + Math.floor(Math.random() * 200); // next after 5-8s
+          g.nextSideCharDelay = 300 + Math.floor(Math.random() * 200);
         }
       }
 
       // ----------------------------------------------------
       // 3. THE TWO APPROACHING DOORS (LEFT & RIGHT)
       // ----------------------------------------------------
-      // Progress from 0 (at horizon) to 1 (at runner threshold)
       const doorProg = Math.max(0, Math.min(1, (100 - g.distance) / 100));
       const doorScale = 0.22 + Math.pow(doorProg, 2.2) * 0.88;
       const doorY = vpY + Math.pow(doorProg, 1.6) * (height * 0.46);
@@ -659,14 +940,38 @@ export default function GhostfaceRunnerGame({
 
           if (isCorrect) {
             // ==========================================
-            // SUCCESS: GHOSTFACE STARTS DANCING! 💃✨
+            // SUCCESS: GHOSTFACE DANCES & EARNS POINTS!
             // ==========================================
             setGameState('dancing');
-            g.danceTimer = 140; // ~2.3 seconds of dancing
-            const newScore = score + 100 + streak * 25;
+            g.danceTimer = 130;
+
+            // Score calculation: Base + Streak multiplier + Speed bonus
+            const mult = streak >= 7 ? 3.0 : streak >= 4 ? 2.0 : streak >= 2 ? 1.5 : 1.0;
+            const speedBonus = g.distance > 40 ? 30 : 0;
+            const earnedPoints = Math.round(100 * mult) + speedBonus;
+
+            const newScore = score + earnedPoints;
             const newStreak = streak + 1;
             setScore(newScore);
             setStreak(newStreak);
+            setBestStreak(b => Math.max(b, newStreak));
+            setCorrectCount(c => c + 1);
+
+            // Time Run Bonus: +5 Seconds!
+            setTimeLeft(t => Math.min(180, t + 5));
+            setTimeBonusText('+5s ⏱️');
+            setTimeout(() => setTimeBonusText(null), 1600);
+
+            // Floating canvas score popup
+            g.particles.push({
+              x: ghostfaceX,
+              y: ghostfaceY - 60,
+              vx: 0,
+              vy: -2,
+              symbol: `+${earnedPoints}! ✨`,
+              color: '#34d399',
+              life: 50
+            });
 
             if (newScore > highScore) {
               setHighScore(newScore);
@@ -681,7 +986,7 @@ export default function GhostfaceRunnerGame({
 
             try {
               confetti({
-                particleCount: 70,
+                particleCount: 65,
                 spread: 70,
                 origin: { x: ghostfaceX / width, y: ghostfaceY / height }
               });
@@ -689,13 +994,19 @@ export default function GhostfaceRunnerGame({
 
           } else {
             // ==========================================
-            // WRONG: GHOSTFACE LAYS DOWN & CRIES! 😭💦
+            // WRONG: GHOSTFACE LAYS DOWN & CRIES!
             // ==========================================
             setGameState('crying');
-            g.cryTimer = 170; // ~2.8 seconds of crying
+            g.cryTimer = 160;
             setStreak(0);
-            const currentQ = LOGIC_QUESTIONS[questionIndex % LOGIC_QUESTIONS.length];
-            setExplanation(currentQ.explanation);
+            setWrongCount(w => w + 1);
+
+            // Time Penalty: -3 Seconds!
+            setTimeLeft(t => Math.max(1, t - 3));
+            setTimeBonusText('-3s ⚠️');
+            setTimeout(() => setTimeBonusText(null), 1600);
+
+            setExplanation(currentQuestion.explanation);
 
             if (soundEnabled) {
               soundEngine.playGhostfaceCry();
@@ -704,10 +1015,8 @@ export default function GhostfaceRunnerGame({
         }
 
       } else if (gameState === 'dancing') {
-        // DANCING ANIMATION
         drawDancingGhostface(ctx, vpX, ghostfaceY, g.animTime);
 
-        // Sparkle / Music Note particles
         if (Math.random() < 0.4) {
           g.particles.push({
             x: vpX + (Math.random() - 0.5) * 80,
@@ -715,39 +1024,38 @@ export default function GhostfaceRunnerGame({
             vx: (Math.random() - 0.5) * 2,
             vy: -1.8 - Math.random() * 2,
             symbol: ['🎵', '🎶', '✨', '⭐', '🕺'][Math.floor(Math.random() * 5)],
+            color: '#facc15',
             life: 45
           });
         }
 
         g.danceTimer -= 1;
         if (g.danceTimer <= 0) {
-          // Next Question!
-          const nextQ = questionIndex + 1;
-          setQuestionIndex(nextQ);
-          prepareQuestion(nextQ);
+          // Advance to next shuffled question!
+          currentQIndexRef.current += 1;
+          prepareQuestion(currentQIndexRef.current);
           setGameState('running');
         }
 
       } else if (gameState === 'crying') {
-        // CRYING ANIMATION: LAYS DOWN & STARTS CRYING!
         drawCryingGhostface(ctx, vpX + playerLaneOffset, ghostfaceY + 15, g.animTime, g.tears);
 
         g.cryTimer -= 1;
         if (g.cryTimer <= 0) {
-          // Recover and resume running to next question
-          const nextQ = questionIndex + 1;
-          setQuestionIndex(nextQ);
-          prepareQuestion(nextQ);
+          // Advance to next shuffled question!
+          currentQIndexRef.current += 1;
+          prepareQuestion(currentQIndexRef.current);
           setGameState('running');
         }
       }
 
-      // Render Floating particles (music notes, stars, etc.)
+      // Render Floating particles (music notes, score numbers, stars)
       g.particles = g.particles.filter(p => {
         p.x += p.vx;
         p.y += p.vy;
         p.life -= 1;
-        ctx.font = '16px sans-serif';
+        ctx.fillStyle = p.color || '#ffffff';
+        ctx.font = 'bold 15px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(p.symbol, p.x, p.y);
         return p.life > 0;
@@ -758,7 +1066,7 @@ export default function GhostfaceRunnerGame({
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [gameState, doorAnswers, questionIndex, score, streak, highScore, prepareQuestion, soundEnabled]);
+  }, [gameState, doorAnswers, currentQuestion, score, streak, highScore, prepareQuestion, soundEnabled]);
 
   // Fast forward / Rush door
   const handleRushDoor = () => {
@@ -766,6 +1074,16 @@ export default function GhostfaceRunnerGame({
       gRef.current.distance = 1;
     }
   };
+
+  // Calculate Performance Rank
+  const getRankTitle = (pts) => {
+    if (pts >= 1500) return { title: '🧠 300 IQ Supreme Logic God', desc: 'Flawless common sense under extreme speed!' };
+    if (pts >= 1000) return { title: '🔪 Swift Mind Assassin', desc: 'Blazing fast reflexes and top-tier intellect!' };
+    if (pts >= 500) return { title: '👻 Certified Door Scholar', desc: 'Solid logical thinking and good intuition!' };
+    return { title: '🦆 Apprentice of the Duck', desc: 'Great effort! The duck believes in your next run!' };
+  };
+
+  const accuracyRate = Math.round((correctCount / Math.max(1, correctCount + wrongCount)) * 100);
 
   return (
     <div className={isFullscreen 
@@ -777,23 +1095,46 @@ export default function GhostfaceRunnerGame({
       <div className="bg-slate-900 border-b border-emerald-500/30 px-3 sm:px-4 py-2 text-white flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md w-full">
         <div className="flex items-center space-x-2 text-xs truncate max-w-full">
           <span className="bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-lg border border-emerald-500/30 whitespace-nowrap shrink-0">
-            👻 Q#{questionIndex + 1}
+            👻 Q#{currentQIndexRef.current + 1}
           </span>
-          <h3 className="font-heading font-extrabold text-xs sm:text-sm text-amber-200 tracking-wide truncate" title={LOGIC_QUESTIONS[questionIndex % LOGIC_QUESTIONS.length].question}>
-            "{LOGIC_QUESTIONS[questionIndex % LOGIC_QUESTIONS.length].question}"
+          <h3 className="font-heading font-extrabold text-xs sm:text-sm text-amber-200 tracking-wide truncate" title={currentQuestion.question}>
+            "{currentQuestion.question}"
           </h3>
         </div>
 
+        {/* Live Scores & Time Run HUD */}
         <div className="flex items-center space-x-3 text-xs shrink-0 font-mono">
-          <div className="flex items-center space-x-1 text-emerald-400 font-bold">
-            <Trophy className="w-3.5 h-3.5" />
-            <span>{score} pts</span>
+          {/* Time Run Countdown */}
+          <div className={`flex items-center space-x-1 font-bold px-2 py-0.5 rounded-lg border transition ${
+            timeLeft <= 10 
+              ? 'bg-rose-500/30 text-rose-300 border-rose-500/50 animate-pulse' 
+              : 'bg-slate-800 text-cyan-300 border-slate-700'
+          }`}>
+            <Timer className="w-3.5 h-3.5" />
+            <span>{timeLeft}s</span>
+            {timeBonusText && (
+              <span className={`text-[10px] font-extrabold pl-1 animate-bounce ${
+                timeBonusText.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'
+              }`}>
+                {timeBonusText}
+              </span>
+            )}
           </div>
+
+          {/* Score Counter */}
+          <div className="flex items-center space-x-1 text-emerald-400 font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">
+            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            <span>{score}</span>
+          </div>
+
+          {/* Streak Indicator */}
           {streak > 1 && (
-            <span className="bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-lg text-[10px] animate-pulse">
+            <span className="bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-lg text-[10px] animate-pulse border border-amber-500/30">
               🔥 {streak}x
             </span>
           )}
+
+          {/* Fullscreen Focus Toggle */}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="text-slate-400 hover:text-white p-1 rounded-lg transition"
@@ -844,8 +1185,35 @@ export default function GhostfaceRunnerGame({
                 Ghostface Logic Door Runner
               </h3>
               <p className="text-xs text-slate-300">
-                Steer into the <strong>CORRECT door</strong> to make Ghostface dance! Choose the wrong door and he lays down crying! 🦆
+                Fresh randomized questions every single run! Choose the <strong>CORRECT door</strong> to make Ghostface dance, earn score points, and extend your time clock (+5s)! 🦆
               </p>
+            </div>
+
+            {/* Run Duration Selector */}
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-slate-400 font-semibold">Run Duration:</span>
+              <button
+                type="button"
+                onClick={() => setSelectedDuration(60)}
+                className={`px-3 py-1 rounded-xl font-bold transition border ${
+                  selectedDuration === 60 
+                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' 
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}
+              >
+                ⏱️ 60s Blitz
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDuration(90)}
+                className={`px-3 py-1 rounded-xl font-bold transition border ${
+                  selectedDuration === 90 
+                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' 
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}
+              >
+                ⏱️ 90s Champion
+              </button>
             </div>
 
             <button
@@ -853,7 +1221,7 @@ export default function GhostfaceRunnerGame({
               className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-heading font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center space-x-2"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>START SPRINTING! 🔪</span>
+              <span>START SPRINT RUN! 🔪</span>
             </button>
           </div>
         )}
@@ -861,19 +1229,89 @@ export default function GhostfaceRunnerGame({
         {/* Dancing Toast Overlay */}
         {gameState === 'dancing' && (
           <div className="absolute top-2 bg-emerald-600/90 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow-xl flex items-center space-x-1.5 animate-bounce border border-emerald-300 z-20">
-            <span>🎉 CORRECT! 200 IQ MOVE! DANCE PARTY! 🕺✨</span>
+            <span>🎉 CORRECT! 200 IQ MOVE! DANCE PARTY (+5s)! 🕺✨</span>
           </div>
         )}
 
         {/* Crying Toast Overlay */}
         {gameState === 'crying' && (
           <div className="absolute top-2 bg-rose-700/95 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow-xl text-center space-y-0.5 animate-pulse border border-rose-400 max-w-sm z-20">
-            <div>😭 WRONG DOOR! GHOSTFACE IS SOBBING! 💦</div>
+            <div>😭 WRONG DOOR! GHOSTFACE IS SOBBING (-3s)! 💦</div>
             {explanation && (
               <p className="text-[10px] font-medium text-rose-100">
                 💡 Truth: {explanation}
               </p>
             )}
+          </div>
+        )}
+
+        {/* GAME OVER RUN SUMMARY OVERLAY */}
+        {gameState === 'gameover' && (
+          <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center space-y-3 animate-fade-in z-30">
+            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-2xl shadow-lg">
+              🏆
+            </div>
+
+            <div className="space-y-0.5">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400">
+                Run Complete • Time Up!
+              </span>
+              <h3 className="text-xl font-heading font-extrabold text-white">
+                {getRankTitle(score).title}
+              </h3>
+              <p className="text-[11px] text-slate-300">
+                {getRankTitle(score).desc}
+              </p>
+            </div>
+
+            {/* Score & Stats Grid */}
+            <div className="grid grid-cols-4 gap-2 w-full max-w-md text-center">
+              <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Final Score</span>
+                <span className="text-base font-extrabold text-emerald-400 font-mono">{score}</span>
+              </div>
+              <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Total Time</span>
+                <span className="text-base font-extrabold text-cyan-300 font-mono">{formatTime(runTime)}</span>
+              </div>
+              <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Accuracy</span>
+                <span className="text-base font-extrabold text-amber-300 font-mono">{accuracyRate}%</span>
+              </div>
+              <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Best Streak</span>
+                <span className="text-base font-extrabold text-purple-300 font-mono">{bestStreak}x</span>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 text-xs text-slate-400">
+              <span>✅ Correct: <strong className="text-emerald-400">{correctCount}</strong></span>
+              <span>•</span>
+              <span>❌ Mistakes: <strong className="text-rose-400">{wrongCount}</strong></span>
+              <span>•</span>
+              <span>🏆 All-Time High: <strong className="text-amber-400">{highScore}</strong></span>
+            </div>
+
+            {/* Run Actions */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <button
+                onClick={handleStartGame}
+                className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center space-x-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Play Another Run 🔪</span>
+              </button>
+
+              {onComplete && (
+                <button
+                  onClick={() => onComplete(5)}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl transition flex items-center space-x-1"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Save Run</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -924,10 +1362,10 @@ export default function GhostfaceRunnerGame({
       {/* 5. MICRO TOOLBAR (Quick actions & hints) */}
       <div className="px-3 py-1.5 bg-slate-950 text-slate-400 text-[11px] flex items-center justify-between w-full">
         <span className="hidden sm:inline">
-          Controls: <strong>[A]/[←]</strong> Left • <strong>[D]/[→]</strong> Right • <strong>[Space]</strong> Rush
+          Run: <strong>{formatTime(runTime)}</strong> • Accuracy: <strong>{accuracyRate}%</strong> • Controls: <strong>[A]/[←]</strong> Left • <strong>[D]/[→]</strong> Right
         </span>
         <span className="sm:hidden">
-          Tap Door A or B to steer!
+          ⏱️ {timeLeft}s • {score} pts
         </span>
 
         <div className="flex items-center space-x-2">
@@ -1069,9 +1507,7 @@ function drawRunningGhostface(ctx, x, y, time) {
 
   // Running Legs
   ctx.fillStyle = '#020617';
-  // Left Leg
   ctx.fillRect(-12 + legSwing * 0.4, 18, 7, 16);
-  // Right Leg
   ctx.fillRect(5 - legSwing * 0.4, 18, 7, 16);
 
   // Flowing Black Hooded Robe / Cloak
@@ -1273,7 +1709,6 @@ function drawScreamMask(ctx, x, y, scale = 1.0) {
   ctx.strokeStyle = '#020617';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  // Elongated iconic chin
   ctx.moveTo(0, -18);
   ctx.bezierCurveTo(-15, -18, -14, 2, -5, 16);
   ctx.bezierCurveTo(-3, 20, 3, 20, 5, 16);
@@ -1284,11 +1719,9 @@ function drawScreamMask(ctx, x, y, scale = 1.0) {
 
   // Iconic Drooping Hollow Eye Sockets
   ctx.fillStyle = '#020617';
-  // Left eye
   ctx.beginPath();
   ctx.ellipse(-6, -6, 3.5, 6.5, -0.2, 0, Math.PI * 2);
   ctx.fill();
-  // Right eye
   ctx.beginPath();
   ctx.ellipse(6, -6, 3.5, 6.5, 0.2, 0, Math.PI * 2);
   ctx.fill();
@@ -1318,21 +1751,17 @@ function drawScreamMask(ctx, x, y, scale = 1.0) {
 function drawKnifeHand(ctx, angle = 0) {
   ctx.rotate(angle);
 
-  // Black sleeve cuff
   ctx.fillStyle = '#020617';
   ctx.beginPath();
   ctx.arc(0, 0, 6, 0, Math.PI * 2);
   ctx.fill();
 
-  // Knife Handle / Hilt
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, -3, 8, 5);
 
-  // Knife Guard
   ctx.fillStyle = '#94a3b8';
   ctx.fillRect(7, -6, 3, 11);
 
-  // Curved Metallic Steel Blade
   ctx.fillStyle = '#e2e8f0';
   ctx.strokeStyle = '#64748b';
   ctx.lineWidth = 1;
@@ -1345,7 +1774,6 @@ function drawKnifeHand(ctx, angle = 0) {
   ctx.fill();
   ctx.stroke();
 
-  // Blade Blood Drop at tip
   ctx.fillStyle = '#e11d48';
   ctx.beginPath();
   ctx.arc(28, 0, 1.8, 0, Math.PI * 2);

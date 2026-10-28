@@ -40,11 +40,14 @@ Every day is structured into 4 balanced, self-paced micro-tasks:
 
 ### 4. 🎮 Zen Arcade & Mini-Games Suite
 - **👻 Ghostface Door Runner 🔪:** An energetic 60 FPS 3D-perspective corridor runner featuring Ghostface sprinting with a knife toward upcoming logic doors.
-  - **Common Sense & Logic Questions:** Answer witty riddles displayed at the top of the screen (e.g., *"What gets wetter the more it dries?"*).
-  - **Door Mechanics:** Choose between Door A and Door B (using keyboard `[A]/[D]`, arrow keys, touch, or on-screen buttons).
+  - **Randomized Question Runs:** 65+ curated witty general logic, lateral thinking, and common sense riddles freshly shuffled (Fisher-Yates) every single run so no two game runs are ever the same!
+  - **Time Runs Mode:** Play 60s Blitz Sprint or 90s Champion Run. Correct door choices reward **+5s bonus time** (`+5s ⏱️`), while wrong choices incur a **-3s penalty** (`-3s ⚠️`).
+  - **Dynamic Scores & Multipliers:** Earn base points, speed decision bonuses, and streak combo multipliers (`1.5x`, `2x`, `3x` for high streaks) with animated floating score popups.
+  - **Door Mechanics:** Choose between Door A and Door B (using keyboard `[A]/[D]`, arrow keys, touch, or compact on-screen buttons).
   - **Victory Dance vs. Tantrum Crying:**
     - Choose the **Correct Door**: Confetti explodes and Ghostface does a hilarious disco victory dance waving his knife in the air (`200 IQ MOVE! 🕺✨`).
     - Choose the **Wrong Door**: Ghostface drops his knife, lays face-down on the floor, kicks his legs tantrum-style, and sobs hysterically with shooting tear fountains while displaying the explanation (`WHYYYY?! 😭💦`).
+  - **Run Summary & Title:** Detailed stats breakdown at game over (Score, Total Time, Accuracy %, Best Streak, and IQ Title rank).
   - **Funny Side Cameos:** Random characters (such as a cool Moonwalking Duck with sunglasses, Dancing Banana with maracas, and Chill Capybara) pop into the outer margins with funny speech bubbles without blocking gameplay.
 - **🫧 Stress Bubble Pop:** Pop away exam worries & build combo streaks.
 - **👽 Cosmic Alien Runner:** Claim donuts, muffins, and trigger 3-second Fart Boost flights!
