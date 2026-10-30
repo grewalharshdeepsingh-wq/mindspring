@@ -793,18 +793,47 @@ export default function GhostfaceRunnerGame({
           type: chosenType,
           side: side,
           y: height * 0.52 + Math.random() * (height * 0.25),
-          timer: 160,
+          timer: 170,
           speech: chosenType.startsWith('duck') ? 'QUACK! 🦆🕶️' :
                   chosenType === 'banana' ? 'PEANUT BUTTER! 🍌' : 'STAY CHILL 🍊'
         };
 
         if (soundEnabled) {
+          // 1. High-impact procedural arcade SFX
           if (chosenType.startsWith('duck') && soundEngine.playGhostfaceQuack) {
             soundEngine.playGhostfaceQuack();
           } else if (chosenType === 'banana' && soundEngine.playBananaBoing) {
             soundEngine.playBananaBoing();
           } else if (chosenType === 'capybara' && soundEngine.playCapybaraRelax) {
             soundEngine.playCapybaraRelax();
+          }
+
+          // 2. Loud spoken character voice via Web Speech Synthesis
+          if ('speechSynthesis' in window) {
+            try {
+              window.speechSynthesis.cancel();
+              const voicePhrase = chosenType.startsWith('duck') 
+                ? 'Quack quack!' 
+                : chosenType === 'banana' 
+                  ? 'Peanut butter jelly time!' 
+                  : 'Stay chill, you got this!';
+
+              const utter = new SpeechSynthesisUtterance(voicePhrase);
+              utter.volume = 1.0; // Maximum volume!
+
+              if (chosenType.startsWith('duck')) {
+                utter.pitch = 1.95; // Squeaky, hilarious duck pitch
+                utter.rate = 1.35;
+              } else if (chosenType === 'banana') {
+                utter.pitch = 1.6; // High energetic cartoon pitch
+                utter.rate = 1.25;
+              } else {
+                utter.pitch = 0.85; // Deep, soothing, ultra-relaxed capybara pitch
+                utter.rate = 0.9;
+              }
+
+              window.speechSynthesis.speak(utter);
+            } catch (_) {}
           }
         }
       }
@@ -901,21 +930,36 @@ export default function GhostfaceRunnerGame({
           ctx.fill();
         }
 
-        // Speech Bubble
+        // Speech Bubble (Enlarged, animated & loud styling!)
+        const bubbleBounce = Math.sin(g.animTime * 0.4) * 2;
         ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(-36, -45, 72, 18, 6);
+        ctx.roundRect(-52, -56 + bubbleBounce, 104, 26, 8);
         ctx.fill();
+        ctx.stroke();
+
+        // Little speech pointer triangle
+        ctx.beginPath();
+        ctx.moveTo(-4, -30 + bubbleBounce);
+        ctx.lineTo(4, -30 + bubbleBounce);
+        ctx.lineTo(0, -22 + bubbleBounce);
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.stroke();
+
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 9px sans-serif';
+        ctx.font = '900 11px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(sc.speech, 0, -33);
+        ctx.fillText(sc.speech, 0, -40 + bubbleBounce);
 
         ctx.restore();
 
         if (sc.timer <= 0) {
           sc.active = false;
-          g.nextSideCharDelay = 300 + Math.floor(Math.random() * 200);
+          g.nextSideCharDelay = 180 + Math.floor(Math.random() * 140);
         }
       }
 

@@ -866,29 +866,31 @@ class SoundEngine {
   playGhostfaceQuack() {
     try {
       this.init();
-      [380, 440].forEach((freq, idx) => {
+      // Loud, sharp, brassy cartoon duck quack bursts
+      [420, 520, 390].forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         const filter = this.ctx.createBiquadFilter();
 
         osc.type = 'sawtooth';
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(900, this.ctx.currentTime);
-        filter.Q.setValueAtTime(4.0, this.ctx.currentTime);
+        filter.frequency.setValueAtTime(1100, this.ctx.currentTime);
+        filter.Q.setValueAtTime(3.0, this.ctx.currentTime);
 
-        const startT = this.ctx.currentTime + idx * 0.1;
+        const startT = this.ctx.currentTime + idx * 0.09;
         osc.frequency.setValueAtTime(freq, startT);
-        osc.frequency.exponentialRampToValueAtTime(freq * 0.8, startT + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.72, startT + 0.1);
 
-        gain.gain.setValueAtTime(0.2, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.09);
+        // Increased gain for punchy, loud presence
+        gain.gain.setValueAtTime(0.55, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.12);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
 
         osc.start(startT);
-        osc.stop(startT + 0.09);
+        osc.stop(startT + 0.12);
       });
     } catch (_) {}
   }
@@ -968,22 +970,28 @@ class SoundEngine {
       this.init();
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      osc.type = 'sine';
+      osc.type = 'sawtooth';
 
-      // Rubber spring sweep
-      osc.frequency.setValueAtTime(260, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(680, this.ctx.currentTime + 0.14);
-      osc.frequency.exponentialRampToValueAtTime(320, this.ctx.currentTime + 0.28);
-      osc.frequency.exponentialRampToValueAtTime(540, this.ctx.currentTime + 0.38);
+      // Loud resonant rubber spring sweep with harmonic bite
+      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.12);
+      osc.frequency.exponentialRampToValueAtTime(360, this.ctx.currentTime + 0.24);
+      osc.frequency.exponentialRampToValueAtTime(720, this.ctx.currentTime + 0.36);
+      osc.frequency.exponentialRampToValueAtTime(280, this.ctx.currentTime + 0.48);
 
-      gain.gain.setValueAtTime(0.24, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1400, this.ctx.currentTime);
 
-      osc.connect(gain);
+      gain.gain.setValueAtTime(0.55, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+
+      osc.connect(filter);
+      filter.connect(gain);
       gain.connect(this.masterGain);
 
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.4);
+      osc.stop(this.ctx.currentTime + 0.5);
     } catch (_) {}
   }
 
@@ -991,23 +999,23 @@ class SoundEngine {
   playCapybaraRelax() {
     try {
       this.init();
-      // Warm marimba/wooden chime (D4 293.66 Hz + F#4 369.99 Hz)
-      [293.66, 369.99].forEach((freq, idx) => {
+      // Loud, warm, deep marimba & gong tones (D3 146.83 Hz + D4 293.66 Hz + F#4 369.99 Hz)
+      [146.83, 293.66, 369.99].forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sine';
+        osc.type = 'triangle';
 
-        const startT = this.ctx.currentTime + idx * 0.08;
+        const startT = this.ctx.currentTime + idx * 0.06;
         osc.frequency.setValueAtTime(freq, startT);
 
-        gain.gain.setValueAtTime(0.22, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.6);
+        gain.gain.setValueAtTime(0.55, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.85);
 
         osc.connect(gain);
         gain.connect(this.masterGain);
 
         osc.start(startT);
-        osc.stop(startT + 0.6);
+        osc.stop(startT + 0.85);
       });
     } catch (_) {}
   }
