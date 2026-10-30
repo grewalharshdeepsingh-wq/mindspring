@@ -228,6 +228,146 @@ class SoundEngine {
     }
   }
 
+  // Mini-Game & Zen Arcade: Game Start Jingle
+  playArcadeStart() {
+    try {
+      this.init();
+      // Ascending C-Major Triad with sparkling overtone: C5, E5, G5, C6
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+
+        const startT = this.ctx.currentTime + idx * 0.08;
+        osc.frequency.setValueAtTime(freq, startT);
+
+        gain.gain.setValueAtTime(0.2, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.32);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.32);
+      });
+    } catch (e) {}
+  }
+
+  // Mini-Game & Zen Arcade: Game Over / Session Complete Melody
+  playGameOverSound() {
+    try {
+      this.init();
+      // Serene descending cadence: G5 -> E5 -> C5 + warm base
+      const notes = [783.99, 659.25, 523.25];
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+
+        const startT = this.ctx.currentTime + idx * 0.16;
+        osc.frequency.setValueAtTime(freq, startT);
+
+        gain.gain.setValueAtTime(0.22, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.6);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.6);
+      });
+
+      // Warm resolving fundamental
+      const sub = this.ctx.createOscillator();
+      const subGain = this.ctx.createGain();
+      sub.type = 'triangle';
+      sub.frequency.setValueAtTime(261.63, this.ctx.currentTime + 0.32);
+      subGain.gain.setValueAtTime(0.18, this.ctx.currentTime + 0.32);
+      subGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.1);
+
+      sub.connect(subGain);
+      subGain.connect(this.masterGain);
+      sub.start(this.ctx.currentTime + 0.32);
+      sub.stop(this.ctx.currentTime + 1.1);
+    } catch (e) {}
+  }
+
+  // Mini-Game & Zen Arcade: New High Score Fanfare
+  playHighScoreSound() {
+    try {
+      this.init();
+      // Rapid shimmering arpeggio: C5, E5, G5, B5, C6, E6
+      const arpeggio = [523.25, 659.25, 783.99, 987.77, 1046.5, 1318.51];
+      arpeggio.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+
+        const startT = this.ctx.currentTime + idx * 0.06;
+        osc.frequency.setValueAtTime(freq, startT);
+
+        gain.gain.setValueAtTime(0.24, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.45);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.45);
+      });
+    } catch (e) {}
+  }
+
+  // Mini-Game & Zen Arcade: Combo Streak Chime (Pitches up with level)
+  playComboStreak(level = 1) {
+    try {
+      this.init();
+      const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5]; // C5 to C6
+      const noteIdx = Math.min(Math.max(level - 1, 0), scale.length - 1);
+      const freq = scale[noteIdx];
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.15, this.ctx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.25);
+    } catch (e) {}
+  }
+
+  // Mini-Game & Zen Arcade: Final Countdown Tick (Last 5 seconds)
+  playCountdownTick(isFinal = false) {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      const freq = isFinal ? 880 : 587.33; // A5 for final, D5 for countdown
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.8, this.ctx.currentTime + 0.05);
+
+      gain.gain.setValueAtTime(isFinal ? 0.25 : 0.16, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.07);
+    } catch (e) {}
+  }
+
   // Mini-Game: Alien Jump Sound
   playJumpSound() {
     try {
@@ -236,17 +376,17 @@ class SoundEngine {
       const gain = this.ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(240, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(560, this.ctx.currentTime + 0.14);
+      osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(620, this.ctx.currentTime + 0.15);
 
-      gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.26, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
 
       osc.connect(gain);
       gain.connect(this.masterGain);
 
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.15);
+      osc.stop(this.ctx.currentTime + 0.16);
     } catch (e) {}
   }
 
@@ -254,15 +394,15 @@ class SoundEngine {
   playNomSound() {
     try {
       this.init();
-      [420, 620].forEach((freq, idx) => {
+      [460, 680].forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        const startT = this.ctx.currentTime + idx * 0.08;
+        osc.type = 'triangle';
+        const startT = this.ctx.currentTime + idx * 0.07;
         osc.frequency.setValueAtTime(freq, startT);
-        osc.frequency.exponentialRampToValueAtTime(freq * 1.5, startT + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.45, startT + 0.06);
 
-        gain.gain.setValueAtTime(0.22, startT);
+        gain.gain.setValueAtTime(0.24, startT);
         gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.07);
 
         osc.connect(gain);
@@ -284,22 +424,64 @@ class SoundEngine {
 
       osc.type = 'sawtooth';
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(420, this.ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.35);
+      filter.frequency.setValueAtTime(520, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(90, this.ctx.currentTime + 0.42);
 
-      osc.frequency.setValueAtTime(130, this.ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.18);
-      osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.35);
+      osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(75, this.ctx.currentTime + 0.22);
+      osc.frequency.linearRampToValueAtTime(45, this.ctx.currentTime + 0.42);
 
-      gain.gain.setValueAtTime(0.32, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.42);
 
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
 
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.36);
+      osc.stop(this.ctx.currentTime + 0.43);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Alien Fart Propulsion Whoosh Puff (during boost)
+  playFartThrustPuff() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140 + Math.random() * 40, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.08);
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.09);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Alien Leaped Over Obstacle Smoothly
+  playObstacleClearSound() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.1);
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.12);
     } catch (e) {}
   }
 
@@ -311,21 +493,21 @@ class SoundEngine {
       const gain = this.ctx.createGain();
 
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(130, this.ctx.currentTime + 0.25);
+      osc.frequency.setValueAtTime(360, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.28);
 
-      gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
 
       osc.connect(gain);
       gain.connect(this.masterGain);
 
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.25);
+      osc.stop(this.ctx.currentTime + 0.28);
     } catch (e) {}
   }
 
-  // Mini-Game: Bubble Pop Sound
+  // Mini-Game: Stress Bubble Pop (Tactile, watery pop)
   playPopSound() {
     try {
       this.init();
@@ -333,9 +515,9 @@ class SoundEngine {
       const gain = this.ctx.createGain();
 
       osc.type = 'sine';
-      const startFreq = 340 + Math.random() * 220;
-      osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(startFreq * 2.3, this.ctx.currentTime + 0.07);
+      const baseFreq = 380 + Math.random() * 260; // Natural organic variation
+      osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 2.4, this.ctx.currentTime + 0.065);
 
       gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.07);
@@ -344,7 +526,33 @@ class SoundEngine {
       gain.connect(this.masterGain);
 
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.08);
+      osc.stop(this.ctx.currentTime + 0.075);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Stress Bubble Golden/Bonus Pop (Celestial Sparkle)
+  playBonusPopSound() {
+    try {
+      this.init();
+      // Shimmering F-sharp major chord: F#5 (739.99), A#5 (932.33), C#6 (1108.73)
+      const notes = [739.99, 932.33, 1108.73, 1479.98];
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+
+        const startT = this.ctx.currentTime + idx * 0.035;
+        osc.frequency.setValueAtTime(freq, startT);
+
+        gain.gain.setValueAtTime(0.2, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.38);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.38);
+      });
     } catch (e) {}
   }
 
@@ -403,21 +611,134 @@ class SoundEngine {
 
   // Mini-Game: Catch Sound (Sweet harmonic sparkle)
   playCatchSound() {
+    this.playLotusCatch('star');
+  }
+
+  // Mini-Game: Lotus Calm Catch - Distinct Zen Tones per Item Shape
+  playLotusCatch(shape = 'star') {
     try {
       this.init();
-      [523.25, 659.25, 783.99].forEach((freq, idx) => {
+
+      if (shape === 'droplet') {
+        // Water drop "bloop": downwards pitch swoop
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        const startT = this.ctx.currentTime + idx * 0.04;
-        osc.frequency.setValueAtTime(freq, startT);
-        gain.gain.setValueAtTime(0.18, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.3);
+        osc.frequency.setValueAtTime(1100, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(460, this.ctx.currentTime + 0.12);
+
+        gain.gain.setValueAtTime(0.24, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+
         osc.connect(gain);
         gain.connect(this.masterGain);
-        osc.start(startT);
-        osc.stop(startT + 0.3);
-      });
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.14);
+
+      } else if (shape === 'sakura') {
+        // Cherry blossom: sweet koto / acoustic chime pair
+        [880.0, 1108.73].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          const startT = this.ctx.currentTime + idx * 0.05;
+          osc.frequency.setValueAtTime(freq, startT);
+
+          gain.gain.setValueAtTime(0.2, startT);
+          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.35);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(startT);
+          osc.stop(startT + 0.35);
+        });
+
+      } else if (shape === 'crystal') {
+        // Sacred Crystal: Long resonant Tibetan singing bowl chime (528 Hz)
+        const osc = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc2.type = 'sine';
+        osc.frequency.setValueAtTime(528, this.ctx.currentTime);
+        osc2.frequency.setValueAtTime(1056, this.ctx.currentTime); // 1st harmonic
+
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.9);
+
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start();
+        osc2.start();
+        osc.stop(this.ctx.currentTime + 0.9);
+        osc2.stop(this.ctx.currentTime + 0.9);
+
+      } else {
+        // Default / Star: Shimmering triad chime
+        [659.25, 830.61, 987.77].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          const startT = this.ctx.currentTime + idx * 0.04;
+          osc.frequency.setValueAtTime(freq, startT);
+          gain.gain.setValueAtTime(0.18, startT);
+          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.3);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(startT);
+          osc.stop(startT + 0.3);
+        });
+      }
+    } catch (e) {}
+  }
+
+  // Mini-Game: Hazard / Stormcloud caught in Lotus Calm Catch (-15 pts)
+  playHazardHitSound() {
+    try {
+      this.init();
+      // Muffled low thunder rumble / soft warning thump
+      const noise = this.createNoiseBuffer();
+      const src = this.ctx.createBufferSource();
+      src.buffer = noise;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(280, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.25);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      src.start();
+      src.stop(this.ctx.currentTime + 0.28);
+    } catch (e) {}
+  }
+
+  // Mini-Game: Subtle Lotus Glide ripple
+  playLotusGlide() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.09);
+
+      gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.09);
     } catch (e) {}
   }
 
@@ -603,17 +924,140 @@ class SoundEngine {
   playDoorCrash() {
     try {
       this.init();
+      // Low punchy impact thud
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(140, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.2);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.22);
 
-      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+      gain.gain.setValueAtTime(0.38, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.24);
 
       osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.24);
+
+      // Noise crack for wooden door slam
+      const noise = this.createNoiseBuffer();
+      const src = this.ctx.createBufferSource();
+      src.buffer = noise;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(650, this.ctx.currentTime);
+
+      const nGain = this.ctx.createGain();
+      nGain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+      nGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+
+      src.connect(filter);
+      filter.connect(nGain);
+      nGain.connect(this.masterGain);
+
+      src.start();
+      src.stop(this.ctx.currentTime + 0.15);
+    } catch (_) {}
+  }
+
+  // Mini-Game: Funny Banana Cameo Cartoon Spring Boing ("Peanut butter jelly time!")
+  playBananaBoing() {
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+
+      // Rubber spring sweep
+      osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(680, this.ctx.currentTime + 0.14);
+      osc.frequency.exponentialRampToValueAtTime(320, this.ctx.currentTime + 0.28);
+      osc.frequency.exponentialRampToValueAtTime(540, this.ctx.currentTime + 0.38);
+
+      gain.gain.setValueAtTime(0.24, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.4);
+    } catch (_) {}
+  }
+
+  // Mini-Game: Capybara Cameo Ultra Chill Zen Gong
+  playCapybaraRelax() {
+    try {
+      this.init();
+      // Warm marimba/wooden chime (D4 293.66 Hz + F#4 369.99 Hz)
+      [293.66, 369.99].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+
+        const startT = this.ctx.currentTime + idx * 0.08;
+        osc.frequency.setValueAtTime(freq, startT);
+
+        gain.gain.setValueAtTime(0.22, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.6);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.6);
+      });
+    } catch (_) {}
+  }
+
+  // Mini-Game: Time Bonus Earned (+5s ⏱️)
+  playTimeBonusSound() {
+    try {
+      this.init();
+      // Upbeat double ding: G5 (784Hz) -> C6 (1046.5Hz)
+      [783.99, 1046.5].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+
+        const startT = this.ctx.currentTime + idx * 0.09;
+        osc.frequency.setValueAtTime(freq, startT);
+
+        gain.gain.setValueAtTime(0.22, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.28);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 0.28);
+      });
+    } catch (_) {}
+  }
+
+  // Mini-Game: Time Penalty Deducted (-3s ⚠️)
+  playTimePenaltySound() {
+    try {
+      this.init();
+      // Low descending buzz: 220Hz -> 140Hz
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(450, this.ctx.currentTime);
+
+      osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(140, this.ctx.currentTime + 0.2);
+
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+
+      osc.connect(filter);
+      filter.connect(gain);
       gain.connect(this.masterGain);
 
       osc.start();

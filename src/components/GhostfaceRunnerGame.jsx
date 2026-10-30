@@ -633,6 +633,11 @@ export default function GhostfaceRunnerGame({
     gRef.current.particles = [];
     gRef.current.tears = [];
 
+    // Audio Cue for Run Launch
+    if (soundEnabled && soundEngine.playArcadeStart) {
+      soundEngine.playArcadeStart();
+    }
+
     // 3. Prepare first randomized question
     prepareQuestion(0);
     setGameState('running');
@@ -645,9 +650,19 @@ export default function GhostfaceRunnerGame({
       interval = setInterval(() => {
         setRunTime(r => r + 1);
         setTimeLeft(prev => {
+          if (prev <= 6 && prev > 1 && soundEnabled && soundEngine.playCountdownTick) {
+            soundEngine.playCountdownTick(prev === 2);
+          }
           if (prev <= 1) {
             // Time is UP: End the run!
             setGameState('gameover');
+            if (soundEnabled) {
+              if (score > highScore && soundEngine.playHighScoreSound) {
+                soundEngine.playHighScoreSound();
+              } else if (soundEngine.playGameOverSound) {
+                soundEngine.playGameOverSound();
+              }
+            }
             try {
               confetti({ particleCount: 80, spread: 75, origin: { y: 0.5 } });
             } catch (_) {}
@@ -658,7 +673,7 @@ export default function GhostfaceRunnerGame({
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, soundEnabled, score, highScore]);
 
   // Keyboard controls
   useEffect(() => {
@@ -783,8 +798,14 @@ export default function GhostfaceRunnerGame({
                   chosenType === 'banana' ? 'PEANUT BUTTER! 🍌' : 'STAY CHILL 🍊'
         };
 
-        if (soundEnabled && chosenType.startsWith('duck')) {
-          soundEngine.playGhostfaceQuack();
+        if (soundEnabled) {
+          if (chosenType.startsWith('duck') && soundEngine.playGhostfaceQuack) {
+            soundEngine.playGhostfaceQuack();
+          } else if (chosenType === 'banana' && soundEngine.playBananaBoing) {
+            soundEngine.playBananaBoing();
+          } else if (chosenType === 'capybara' && soundEngine.playCapybaraRelax) {
+            soundEngine.playCapybaraRelax();
+          }
         }
       }
 
@@ -938,6 +959,11 @@ export default function GhostfaceRunnerGame({
           const chosen = g.targetLane < 0 ? -1 : 1;
           const isCorrect = chosen === doorAnswers.correctLane;
 
+          // Sound: Door kick / crash impact on door entry
+          if (soundEnabled && soundEngine.playDoorCrash) {
+            soundEngine.playDoorCrash();
+          }
+
           if (isCorrect) {
             // ==========================================
             // SUCCESS: GHOSTFACE DANCES & EARNS POINTS!
@@ -982,6 +1008,12 @@ export default function GhostfaceRunnerGame({
 
             if (soundEnabled) {
               soundEngine.playGhostfaceDance();
+              // Streak musical chime reward!
+              if (newStreak >= 2 && soundEngine.playComboStreak) {
+                setTimeout(() => soundEngine.playComboStreak(newStreak), 280);
+              } else if (soundEngine.playTimeBonusSound) {
+                setTimeout(() => soundEngine.playTimeBonusSound(), 260);
+              }
             }
 
             try {
@@ -1010,6 +1042,9 @@ export default function GhostfaceRunnerGame({
 
             if (soundEnabled) {
               soundEngine.playGhostfaceCry();
+              if (soundEngine.playTimePenaltySound) {
+                setTimeout(() => soundEngine.playTimePenaltySound(), 350);
+              }
             }
           }
         }

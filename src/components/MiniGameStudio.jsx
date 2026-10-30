@@ -100,18 +100,25 @@ function GameResultCard({
   onPlayAgain, 
   onSwitchGame, 
   onComplete, 
-  soundEnabled 
+  soundEnabled,
+  isHighScore = false
 }) {
   const [quoteState, setQuoteState] = useState(() => getRandomQuote());
 
   useEffect(() => {
-    if (soundEnabled && soundEngine.playLevelUpSound) {
-      soundEngine.playLevelUpSound();
+    if (soundEnabled) {
+      if (isHighScore && soundEngine.playHighScoreSound) {
+        soundEngine.playHighScoreSound();
+      } else if (soundEngine.playGameOverSound) {
+        soundEngine.playGameOverSound();
+      } else if (soundEngine.playLevelUpSound) {
+        soundEngine.playLevelUpSound();
+      }
     }
     try {
       confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
     } catch (e) {}
-  }, [soundEnabled]);
+  }, [soundEnabled, isHighScore]);
 
   const handleNextQuote = () => {
     setQuoteState(prev => getRandomQuote(prev.index));
@@ -270,6 +277,9 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
       });
     }
     setBubbles(seeded);
+    if (soundEnabled && soundEngine.playArcadeStart) {
+      soundEngine.playArcadeStart();
+    }
     setGameState('playing');
   };
 
@@ -277,6 +287,9 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
       setTimeLeft(t => {
+        if (t <= 6 && t > 1 && soundEnabled && soundEngine.playCountdownTick) {
+          soundEngine.playCountdownTick(t === 2);
+        }
         if (t <= 1) {
           setGameState('gameover');
           return 0;
@@ -285,7 +298,7 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, soundEnabled, score, highScore]);
 
   useEffect(() => {
     if (gameState !== 'playing') return;
@@ -328,8 +341,12 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
       e.preventDefault();
       e.stopPropagation();
     }
-    if (soundEnabled && soundEngine.playPopSound) {
-      soundEngine.playPopSound();
+    if (soundEnabled) {
+      if (bubble.isBonus && soundEngine.playBonusPopSound) {
+        soundEngine.playBonusPopSound();
+      } else if (soundEngine.playPopSound) {
+        soundEngine.playPopSound();
+      }
     }
 
     const earned = bubble.pts * combo;
@@ -353,7 +370,13 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
     };
     setPopEffects(prev => [...prev.slice(-4), newEffect]);
 
-    setCombo(c => Math.min(c + 1, 5));
+    setCombo(c => {
+      const nextC = Math.min(c + 1, 5);
+      if (soundEnabled && nextC > 1 && soundEngine.playComboStreak) {
+        soundEngine.playComboStreak(nextC);
+      }
+      return nextC;
+    });
     if (comboTimer.current) clearTimeout(comboTimer.current);
     comboTimer.current = setTimeout(() => setCombo(1), 2000);
 
@@ -455,6 +478,7 @@ function BubblePopGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }
         onSwitchGame={onSwitchGame}
         onComplete={onComplete}
         soundEnabled={soundEnabled}
+        isHighScore={score > 0 && score >= highScore}
       />
     );
   }
@@ -693,6 +717,10 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
       speed: 4.8
     };
 
+    if (soundEnabled && soundEngine.playArcadeStart) {
+      soundEngine.playArcadeStart();
+    }
+
     setGameState('playing');
   };
 
@@ -725,6 +753,9 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
       setTimeLeft(t => {
+        if (t <= 6 && t > 1 && soundEnabled && soundEngine.playCountdownTick) {
+          soundEngine.playCountdownTick(t === 2);
+        }
         if (t <= 1) {
           setGameState('gameover');
           return 0;
@@ -733,7 +764,7 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, soundEnabled, highScore]);
 
   // 60FPS Game Loop via requestAnimationFrame
   useEffect(() => {
@@ -799,6 +830,11 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         g.alienY += (targetFlyY - g.alienY) * 0.2;
         g.isJumping = false;
         g.velocityY = 0;
+
+        // Propulsion puff sound cue
+        if (g.frame % 28 === 0 && g.soundEnabled && soundEngine.playFartThrustPuff) {
+          soundEngine.playFartThrustPuff();
+        }
 
         // Spawn puffy green/yellow fart clouds from behind the alien!
         if (g.frame % 3 === 0) {
@@ -1071,6 +1107,10 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
           setScore(g.score);
           setLeapsCount(g.leaps);
           if (onScoreUpdate) onScoreUpdate(g.score);
+
+          if (g.soundEnabled && soundEngine.playObstacleClearSound) {
+            soundEngine.playObstacleClearSound();
+          }
 
           if (g.score > highScore) {
             setHighScore(g.score);
@@ -1352,6 +1392,7 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
         onSwitchGame={onSwitchGame}
         onComplete={onComplete}
         soundEnabled={soundEnabled}
+        isHighScore={score > 0 && score >= highScore}
       />
     );
   }
@@ -1572,6 +1613,10 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
       soundEnabled
     };
 
+    if (soundEnabled && soundEngine.playArcadeStart) {
+      soundEngine.playArcadeStart();
+    }
+
     setGameState('playing');
   };
 
@@ -1579,6 +1624,9 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     if (gameState !== 'playing') return;
     const interval = setInterval(() => {
       setTimeLeft(t => {
+        if (t <= 6 && t > 1 && soundEnabled && soundEngine.playCountdownTick) {
+          soundEngine.playCountdownTick(t === 2);
+        }
         if (t <= 1) {
           setGameState('gameover');
           return 0;
@@ -1587,7 +1635,7 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, soundEnabled, highScore]);
 
   const handlePointer = (e) => {
     const canvas = canvasRef.current;
@@ -1785,11 +1833,18 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           if (item.isHazard) {
             g.score = Math.max(0, g.score - 15);
             g.popups.push({ x: item.x, y: basketY - 10, text: '-15', color: '#f87171', alpha: 1 });
+            if (g.soundEnabled && soundEngine.playHazardHitSound) {
+              soundEngine.playHazardHitSound();
+            }
           } else {
             g.score += item.pts;
             g.caught += 1;
-            if (g.soundEnabled && soundEngine.playCatchSound) {
-              soundEngine.playCatchSound();
+            if (g.soundEnabled) {
+              if (soundEngine.playLotusCatch) {
+                soundEngine.playLotusCatch(item.shape);
+              } else if (soundEngine.playCatchSound) {
+                soundEngine.playCatchSound();
+              }
             }
             g.popups.push({ x: item.x, y: basketY - 10, text: `+${item.pts}`, color: '#34d399', alpha: 1 });
           }
@@ -1932,6 +1987,7 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
         onSwitchGame={onSwitchGame}
         onComplete={onComplete}
         soundEnabled={soundEnabled}
+        isHighScore={score > 0 && score >= highScore}
       />
     );
   }
@@ -2077,7 +2133,15 @@ export default function MiniGameStudio({ onComplete }) {
             return (
               <button
                 key={g.id}
-                onClick={() => setSelectedGame(g.id)}
+                onClick={() => {
+                  setSelectedGame(g.id);
+                  if (soundEnabled) {
+                    try {
+                      soundEngine.init();
+                      soundEngine.playPopSound();
+                    } catch (e) {}
+                  }
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap ${
                   isActive
                     ? 'bg-white text-purple-900 shadow-sm'
@@ -2094,14 +2158,23 @@ export default function MiniGameStudio({ onComplete }) {
         {/* Audio Mute & Save Button */}
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
+            onClick={() => {
+              const nextState = !soundEnabled;
+              setSoundEnabled(nextState);
+              if (nextState) {
+                try {
+                  soundEngine.init();
+                  soundEngine.playPopSound();
+                } catch (e) {}
+              }
+            }}
             className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
               soundEnabled ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-black/30 text-white/60'
             }`}
             title={soundEnabled ? 'Mute' : 'Unmute'}
           >
             {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{soundEnabled ? 'Sound' : 'Muted'}</span>
+            <span className="hidden sm:inline">{soundEnabled ? 'Sound ON' : 'Muted'}</span>
           </button>
 
           {onComplete && (
