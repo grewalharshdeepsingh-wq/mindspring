@@ -2082,8 +2082,8 @@ export default function MiniGameStudio({ onComplete }) {
       id: 'ghostface',
       name: 'Ghostface Door Runner 🔪',
       icon: '👻',
-      desc: 'Pick right vs wrong door! Dance on win, cry on fail + duck cameos!',
-      badge: 'NEW • Logic Doors'
+      desc: 'Pick right vs wrong door! 170+ non-repeating logic questions + speaking cameos!',
+      badge: '170+ Questions • Logic Doors'
     },
     {
       id: 'bubbles',
