@@ -325,14 +325,57 @@ export default function GhostfaceRunnerGame({
         const chosenType = types[Math.floor(Math.random() * types.length)];
         const side = Math.random() > 0.5 ? 'left' : 'right';
 
+        // Hilarious randomized speech lines
+        let funnyVisualSpeech = 'QUACK! 🦆🕶️';
+        let funnyVoicePhrase = 'Quack quack, you silly goose!';
+        let voicePitch = 2.0;
+        let voiceRate = 1.45;
+
+        if (chosenType.startsWith('duck')) {
+          const duckLines = [
+            { text: "QUACK! DON'T SLIP! 🦆🕶️", spoken: "Quack quack! Don't slip on your face!" },
+            { text: "HONK! WRONG DOOR! 🦆🚨", spoken: "Waa-quack! Think before you blink!" },
+            { text: "I'M A DUCK, NOT A DOCTOR! 🦆", spoken: "Quack! I am a duck, not a doctor!" },
+            { text: "FEATHER POWER! 🪶🦆", spoken: "Quack quack quack! Pure feather power baby!" }
+          ];
+          const picked = duckLines[Math.floor(Math.random() * duckLines.length)];
+          funnyVisualSpeech = picked.text;
+          funnyVoicePhrase = picked.spoken;
+          voicePitch = 2.0; // Squeakiest cartoon duck
+          voiceRate = 1.45;
+        } else if (chosenType === 'banana') {
+          const bananaLines = [
+            { text: "PEANUT BUTTER TIME! 🍌", spoken: "Peanut butter jelly time! Whoop whoop whoop!" },
+            { text: "DON'T PEEL OUT! 🍌⚡", spoken: "Hey! Don't peel out on the track!" },
+            { text: "POTASSIUM BOOST! 🍌💪", spoken: "Potassium power! Look at me go!" },
+            { text: "SLIPPERY WHEN FAST! 🍌💨", spoken: "Boing boing boing! I am a flying banana!" }
+          ];
+          const picked = bananaLines[Math.floor(Math.random() * bananaLines.length)];
+          funnyVisualSpeech = picked.text;
+          funnyVoicePhrase = picked.spoken;
+          voicePitch = 1.7; // Fast zany cartoon voice
+          voiceRate = 1.35;
+        } else {
+          const capyLines = [
+            { text: "STAY CHILL HOMIE 🍊", spoken: "Breathe in, breathe out... stay ultra chill homie." },
+            { text: "OK I PULL UP! 🍊🚗", spoken: "Ok I pull up! Hop out at the afterparty!" },
+            { text: "MAXIMUM ZEN ZONE 🍊✨", spoken: "Zero stress detected. You are a genius." },
+            { text: "CAPYBARA BLESSING 🍊🙏", spoken: "The capybara council has blessed your run." }
+          ];
+          const picked = capyLines[Math.floor(Math.random() * capyLines.length)];
+          funnyVisualSpeech = picked.text;
+          funnyVoicePhrase = picked.spoken;
+          voicePitch = 0.75; // Hilariously deep, slow, relaxed guru voice
+          voiceRate = 0.85;
+        }
+
         g.sideChar = {
           active: true,
           type: chosenType,
           side: side,
           y: height * 0.52 + Math.random() * (height * 0.25),
-          timer: 170,
-          speech: chosenType.startsWith('duck') ? 'QUACK! 🦆🕶️' :
-                  chosenType === 'banana' ? 'PEANUT BUTTER! 🍌' : 'STAY CHILL 🍊'
+          timer: 180,
+          speech: funnyVisualSpeech
         };
 
         if (soundEnabled) {
@@ -349,25 +392,10 @@ export default function GhostfaceRunnerGame({
           if ('speechSynthesis' in window) {
             try {
               window.speechSynthesis.cancel();
-              const voicePhrase = chosenType.startsWith('duck') 
-                ? 'Quack quack!' 
-                : chosenType === 'banana' 
-                  ? 'Peanut butter jelly time!' 
-                  : 'Stay chill, you got this!';
-
-              const utter = new SpeechSynthesisUtterance(voicePhrase);
+              const utter = new SpeechSynthesisUtterance(funnyVoicePhrase);
               utter.volume = 1.0; // Maximum volume!
-
-              if (chosenType.startsWith('duck')) {
-                utter.pitch = 1.95; // Squeaky, hilarious duck pitch
-                utter.rate = 1.35;
-              } else if (chosenType === 'banana') {
-                utter.pitch = 1.6; // High energetic cartoon pitch
-                utter.rate = 1.25;
-              } else {
-                utter.pitch = 0.85; // Deep, soothing, ultra-relaxed capybara pitch
-                utter.rate = 0.9;
-              }
+              utter.pitch = voicePitch;
+              utter.rate = voiceRate;
 
               window.speechSynthesis.speak(utter);
             } catch (_) {}
@@ -707,15 +735,15 @@ export default function GhostfaceRunnerGame({
       : "relative rounded-2xl overflow-hidden shadow-xl border-2 border-emerald-500/40 bg-slate-950 flex flex-col max-w-4xl mx-auto w-full animate-fade-in"
     }>
       
-      {/* 1. TOP QUESTION & HUD BAR (Integrated in single compact 48px header) */}
-      <div className="bg-slate-900 border-b border-emerald-500/30 px-3 sm:px-4 py-2 text-white flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md w-full">
-        <div className="flex items-center space-x-2 text-xs truncate max-w-full">
-          <span className="bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-lg border border-emerald-500/30 whitespace-nowrap shrink-0">
+      {/* 1. TOP QUESTION & HUD BAR (Prominent, High-Contrast & Extra Bold) */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-b-2 border-emerald-500/50 px-3 sm:px-5 py-2.5 text-white flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-lg w-full">
+        <div className="flex items-center space-x-2.5 max-w-full">
+          <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-xl shadow-sm shrink-0 tracking-wider uppercase">
             👻 Q#{currentQIndexRef.current + 1}
           </span>
-          <h3 className="font-heading font-extrabold text-xs sm:text-sm text-amber-200 tracking-wide truncate" title={currentQuestion.question}>
+          <h2 className="font-heading font-black text-sm sm:text-base md:text-lg text-amber-300 drop-shadow-[0_2px_8px_rgba(252,211,77,0.35)] tracking-wide leading-tight" title={currentQuestion.question}>
             "{currentQuestion.question}"
-          </h3>
+          </h2>
         </div>
 
         {/* Live Scores & Time Run HUD */}

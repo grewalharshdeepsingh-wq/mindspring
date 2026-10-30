@@ -862,35 +862,51 @@ class SoundEngine {
     } catch (_) {}
   }
 
-  // Mini-Game: Funny Duck Quack ("Waa-quack!")
+  // Mini-Game: Funny Duck Quack ("Waa-quack-quack!") - Ultra funny Donald-style quack
   playGhostfaceQuack() {
     try {
       this.init();
-      // Loud, sharp, brassy cartoon duck quack bursts
-      [420, 520, 390].forEach((freq, idx) => {
+      // Rapid hilarious 4-note squawking duck fanfare with extreme vibrato
+      const quackNotes = [
+        { f: 450, d: 0.08, delay: 0.0 },
+        { f: 620, d: 0.09, delay: 0.09 },
+        { f: 780, d: 0.11, delay: 0.19 },
+        { f: 410, d: 0.15, delay: 0.31 }
+      ];
+
+      quackNotes.forEach(q => {
         const osc = this.ctx.createOscillator();
+        const lfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
         const gain = this.ctx.createGain();
         const filter = this.ctx.createBiquadFilter();
 
         osc.type = 'sawtooth';
+        // Add fast funny wobbly vibrato
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(26, this.ctx.currentTime);
+        lfoGain.gain.setValueAtTime(45, this.ctx.currentTime);
+        lfo.connect(osc.frequency);
+
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1100, this.ctx.currentTime);
-        filter.Q.setValueAtTime(3.0, this.ctx.currentTime);
+        filter.frequency.setValueAtTime(1250, this.ctx.currentTime);
+        filter.Q.setValueAtTime(5.0, this.ctx.currentTime);
 
-        const startT = this.ctx.currentTime + idx * 0.09;
-        osc.frequency.setValueAtTime(freq, startT);
-        osc.frequency.exponentialRampToValueAtTime(freq * 0.72, startT + 0.1);
+        const startT = this.ctx.currentTime + q.delay;
+        osc.frequency.setValueAtTime(q.f, startT);
+        osc.frequency.exponentialRampToValueAtTime(q.f * 0.65, startT + q.d);
 
-        // Increased gain for punchy, loud presence
-        gain.gain.setValueAtTime(0.55, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.12);
+        gain.gain.setValueAtTime(0.65, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + q.d);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
 
         osc.start(startT);
-        osc.stop(startT + 0.12);
+        lfo.start(startT);
+        osc.stop(startT + q.d);
+        lfo.stop(startT + q.d);
       });
     } catch (_) {}
   }
@@ -964,58 +980,72 @@ class SoundEngine {
     } catch (_) {}
   }
 
-  // Mini-Game: Funny Banana Cameo Cartoon Spring Boing ("Peanut butter jelly time!")
+  // Mini-Game: Funny Banana Cameo Cartoon Spring Boing ("Boing-boing-boing!")
   playBananaBoing() {
     try {
       this.init();
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sawtooth';
+      // Crazy cartoon wobbling slide whistle + spring boing
+      const boings = [
+        { start: 240, peak: 950, end: 320, t: 0.0, dur: 0.2 },
+        { start: 350, peak: 1150, end: 420, t: 0.18, dur: 0.22 },
+        { start: 500, peak: 1400, end: 200, t: 0.38, dur: 0.26 }
+      ];
 
-      // Loud resonant rubber spring sweep with harmonic bite
-      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.12);
-      osc.frequency.exponentialRampToValueAtTime(360, this.ctx.currentTime + 0.24);
-      osc.frequency.exponentialRampToValueAtTime(720, this.ctx.currentTime + 0.36);
-      osc.frequency.exponentialRampToValueAtTime(280, this.ctx.currentTime + 0.48);
-
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1400, this.ctx.currentTime);
-
-      gain.gain.setValueAtTime(0.55, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.masterGain);
-
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.5);
-    } catch (_) {}
-  }
-
-  // Mini-Game: Capybara Cameo Ultra Chill Zen Gong
-  playCapybaraRelax() {
-    try {
-      this.init();
-      // Loud, warm, deep marimba & gong tones (D3 146.83 Hz + D4 293.66 Hz + F#4 369.99 Hz)
-      [146.83, 293.66, 369.99].forEach((freq, idx) => {
+      boings.forEach(b => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'triangle';
+        osc.type = 'sawtooth';
 
-        const startT = this.ctx.currentTime + idx * 0.06;
-        osc.frequency.setValueAtTime(freq, startT);
+        const startT = this.ctx.currentTime + b.t;
+        osc.frequency.setValueAtTime(b.start, startT);
+        osc.frequency.exponentialRampToValueAtTime(b.peak, startT + b.dur * 0.45);
+        osc.frequency.exponentialRampToValueAtTime(b.end, startT + b.dur);
 
-        gain.gain.setValueAtTime(0.55, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.85);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1500, startT);
 
-        osc.connect(gain);
+        gain.gain.setValueAtTime(0.6, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + b.dur);
+
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.masterGain);
 
         osc.start(startT);
-        osc.stop(startT + 0.85);
+        osc.stop(startT + b.dur);
+      });
+    } catch (_) {}
+  }
+
+  // Mini-Game: Capybara Cameo Ultra Chill Zen Gong + Deep Funny Snore/Purr
+  playCapybaraRelax() {
+    try {
+      this.init();
+      // Super chill comedy gong with funny warm wobble
+      const gongNotes = [110.0, 220.0, 329.63, 440.0, 659.25];
+      gongNotes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = idx < 2 ? 'sawtooth' : 'sine';
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(400 + idx * 100, this.ctx.currentTime);
+
+        const startT = this.ctx.currentTime + idx * 0.05;
+        osc.frequency.setValueAtTime(freq, startT);
+        osc.frequency.linearRampToValueAtTime(freq * 0.96, startT + 1.1);
+
+        gain.gain.setValueAtTime(0.65 / (idx + 1), startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 1.1);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(startT);
+        osc.stop(startT + 1.1);
       });
     } catch (_) {}
   }
