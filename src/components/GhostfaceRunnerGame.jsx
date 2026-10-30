@@ -325,80 +325,30 @@ export default function GhostfaceRunnerGame({
         const chosenType = types[Math.floor(Math.random() * types.length)];
         const side = Math.random() > 0.5 ? 'left' : 'right';
 
-        // Hilarious randomized speech lines
-        let funnyVisualSpeech = 'QUACK! 🦆🕶️';
-        let funnyVoicePhrase = 'Quack quack, you silly goose!';
-        let voicePitch = 2.0;
-        let voiceRate = 1.45;
-
-        if (chosenType.startsWith('duck')) {
-          const duckLines = [
-            { text: "QUACK! DON'T SLIP! 🦆🕶️", spoken: "Quack quack! Don't slip on your face!" },
-            { text: "HONK! WRONG DOOR! 🦆🚨", spoken: "Waa-quack! Think before you blink!" },
-            { text: "I'M A DUCK, NOT A DOCTOR! 🦆", spoken: "Quack! I am a duck, not a doctor!" },
-            { text: "FEATHER POWER! 🪶🦆", spoken: "Quack quack quack! Pure feather power baby!" }
-          ];
-          const picked = duckLines[Math.floor(Math.random() * duckLines.length)];
-          funnyVisualSpeech = picked.text;
-          funnyVoicePhrase = picked.spoken;
-          voicePitch = 2.0; // Squeakiest cartoon duck
-          voiceRate = 1.45;
-        } else if (chosenType === 'banana') {
-          const bananaLines = [
-            { text: "PEANUT BUTTER TIME! 🍌", spoken: "Peanut butter jelly time! Whoop whoop whoop!" },
-            { text: "DON'T PEEL OUT! 🍌⚡", spoken: "Hey! Don't peel out on the track!" },
-            { text: "POTASSIUM BOOST! 🍌💪", spoken: "Potassium power! Look at me go!" },
-            { text: "SLIPPERY WHEN FAST! 🍌💨", spoken: "Boing boing boing! I am a flying banana!" }
-          ];
-          const picked = bananaLines[Math.floor(Math.random() * bananaLines.length)];
-          funnyVisualSpeech = picked.text;
-          funnyVoicePhrase = picked.spoken;
-          voicePitch = 1.7; // Fast zany cartoon voice
-          voiceRate = 1.35;
-        } else {
-          const capyLines = [
-            { text: "STAY CHILL HOMIE 🍊", spoken: "Breathe in, breathe out... stay ultra chill homie." },
-            { text: "OK I PULL UP! 🍊🚗", spoken: "Ok I pull up! Hop out at the afterparty!" },
-            { text: "MAXIMUM ZEN ZONE 🍊✨", spoken: "Zero stress detected. You are a genius." },
-            { text: "CAPYBARA BLESSING 🍊🙏", spoken: "The capybara council has blessed your run." }
-          ];
-          const picked = capyLines[Math.floor(Math.random() * capyLines.length)];
-          funnyVisualSpeech = picked.text;
-          funnyVoicePhrase = picked.spoken;
-          voicePitch = 0.75; // Hilariously deep, slow, relaxed guru voice
-          voiceRate = 0.85;
-        }
+        // Classic clean side character labels
+        const sideSpeech = chosenType.startsWith('duck') 
+          ? 'QUACK! 🦆🕶️' 
+          : chosenType === 'banana' 
+            ? 'PEANUT BUTTER! 🍌' 
+            : 'STAY CHILL 🍊';
 
         g.sideChar = {
           active: true,
           type: chosenType,
           side: side,
           y: height * 0.52 + Math.random() * (height * 0.25),
-          timer: 180,
-          speech: funnyVisualSpeech
+          timer: 175,
+          speech: sideSpeech
         };
 
         if (soundEnabled) {
-          // 1. High-impact procedural arcade SFX
+          // Play dedicated pure cartoon comedic SFX (no robotic speech)
           if (chosenType.startsWith('duck') && soundEngine.playGhostfaceQuack) {
             soundEngine.playGhostfaceQuack();
           } else if (chosenType === 'banana' && soundEngine.playBananaBoing) {
             soundEngine.playBananaBoing();
           } else if (chosenType === 'capybara' && soundEngine.playCapybaraRelax) {
             soundEngine.playCapybaraRelax();
-          }
-
-          // 2. Loud spoken character voice via Web Speech Synthesis
-          if ('speechSynthesis' in window) {
-            try {
-              window.speechSynthesis.cancel();
-              const utter = new SpeechSynthesisUtterance(funnyVoicePhrase);
-              utter.volume = 1.0; // Maximum volume!
-              utter.pitch = voicePitch;
-              utter.rate = voiceRate;
-
-              window.speechSynthesis.speak(utter);
-            } catch (_) {}
           }
         }
       }

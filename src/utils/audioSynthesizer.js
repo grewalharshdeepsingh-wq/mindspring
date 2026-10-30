@@ -862,19 +862,35 @@ class SoundEngine {
     } catch (_) {}
   }
 
-  // Mini-Game: Funny Duck Quack ("Waa-quack-quack!") - Ultra funny Donald-style quack
+  // Mini-Game: Funny Duck - Comedic rubber chicken / kazoo honk ("WAAAK-WAK-WAK-SQUEAAK!")
   playGhostfaceQuack() {
     try {
       this.init();
-      // Rapid hilarious 4-note squawking duck fanfare with extreme vibrato
-      const quackNotes = [
-        { f: 450, d: 0.08, delay: 0.0 },
-        { f: 620, d: 0.09, delay: 0.09 },
-        { f: 780, d: 0.11, delay: 0.19 },
-        { f: 410, d: 0.15, delay: 0.31 }
+      // Hilarious layered rubber duck squeak + crazy nasal kazoo slide
+      const now = this.ctx.currentTime;
+
+      // 1. High rubber squeak (balloon pinch / dog toy squeaker)
+      const squeak = this.ctx.createOscillator();
+      const squeakGain = this.ctx.createGain();
+      squeak.type = 'sine';
+      squeak.frequency.setValueAtTime(1200, now);
+      squeak.frequency.exponentialRampToValueAtTime(2400, now + 0.08);
+      squeak.frequency.exponentialRampToValueAtTime(900, now + 0.16);
+      squeakGain.gain.setValueAtTime(0.7, now);
+      squeakGain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+      squeak.connect(squeakGain);
+      squeakGain.connect(this.masterGain);
+      squeak.start(now);
+      squeak.stop(now + 0.17);
+
+      // 2. Comical wobbly kazoo honks (3 rapid staccato burps)
+      const honks = [
+        { f1: 340, f2: 180, t: 0.12, dur: 0.09 },
+        { f1: 460, f2: 210, t: 0.22, dur: 0.09 },
+        { f1: 520, f2: 140, t: 0.32, dur: 0.18 }
       ];
 
-      quackNotes.forEach(q => {
+      honks.forEach(h => {
         const osc = this.ctx.createOscillator();
         const lfo = this.ctx.createOscillator();
         const lfoGain = this.ctx.createGain();
@@ -882,31 +898,31 @@ class SoundEngine {
         const filter = this.ctx.createBiquadFilter();
 
         osc.type = 'sawtooth';
-        // Add fast funny wobbly vibrato
-        lfo.type = 'sine';
-        lfo.frequency.setValueAtTime(26, this.ctx.currentTime);
-        lfoGain.gain.setValueAtTime(45, this.ctx.currentTime);
+        // Ultra goofy wobble
+        lfo.type = 'square';
+        lfo.frequency.setValueAtTime(32, now);
+        lfoGain.gain.setValueAtTime(60, now);
         lfo.connect(osc.frequency);
 
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1250, this.ctx.currentTime);
-        filter.Q.setValueAtTime(5.0, this.ctx.currentTime);
+        filter.frequency.setValueAtTime(950, now);
+        filter.Q.setValueAtTime(6.0, now);
 
-        const startT = this.ctx.currentTime + q.delay;
-        osc.frequency.setValueAtTime(q.f, startT);
-        osc.frequency.exponentialRampToValueAtTime(q.f * 0.65, startT + q.d);
+        const st = now + h.t;
+        osc.frequency.setValueAtTime(h.f1, st);
+        osc.frequency.exponentialRampToValueAtTime(h.f2, st + h.dur);
 
-        gain.gain.setValueAtTime(0.65, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + q.d);
+        gain.gain.setValueAtTime(0.75, st);
+        gain.gain.exponentialRampToValueAtTime(0.001, st + h.dur);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
 
-        osc.start(startT);
-        lfo.start(startT);
-        osc.stop(startT + q.d);
-        lfo.stop(startT + q.d);
+        osc.start(st);
+        lfo.start(st);
+        osc.stop(st + h.dur);
+        lfo.stop(st + h.dur);
       });
     } catch (_) {}
   }
@@ -980,73 +996,110 @@ class SoundEngine {
     } catch (_) {}
   }
 
-  // Mini-Game: Funny Banana Cameo Cartoon Spring Boing ("Boing-boing-boing!")
+  // Mini-Game: Funny Banana - Classic Looney Tunes Slide Whistle Slip + Spring Twang ("BOINGGG-SCHWIP!")
   playBananaBoing() {
     try {
       this.init();
-      // Crazy cartoon wobbling slide whistle + spring boing
-      const boings = [
-        { start: 240, peak: 950, end: 320, t: 0.0, dur: 0.2 },
-        { start: 350, peak: 1150, end: 420, t: 0.18, dur: 0.22 },
-        { start: 500, peak: 1400, end: 200, t: 0.38, dur: 0.26 }
+      const now = this.ctx.currentTime;
+
+      // 1. Zany ascending slide whistle (cartoon slipping on peel)
+      const whistle = this.ctx.createOscillator();
+      const whistleGain = this.ctx.createGain();
+      whistle.type = 'sine';
+      whistle.frequency.setValueAtTime(300, now);
+      whistle.frequency.exponentialRampToValueAtTime(1800, now + 0.28);
+      whistleGain.gain.setValueAtTime(0.7, now);
+      whistleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      whistle.connect(whistleGain);
+      whistleGain.connect(this.masterGain);
+      whistle.start(now);
+      whistle.stop(now + 0.3);
+
+      // 2. High-energy comedy jaw harp / spring twang ("DOOIINNGGG!")
+      const twangs = [
+        { f: 180, t: 0.26, dur: 0.32 },
+        { f: 290, t: 0.38, dur: 0.25 }
       ];
 
-      boings.forEach(b => {
+      twangs.forEach(tw => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-
-        const startT = this.ctx.currentTime + b.t;
-        osc.frequency.setValueAtTime(b.start, startT);
-        osc.frequency.exponentialRampToValueAtTime(b.peak, startT + b.dur * 0.45);
-        osc.frequency.exponentialRampToValueAtTime(b.end, startT + b.dur);
-
         const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(1500, startT);
 
-        gain.gain.setValueAtTime(0.6, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + b.dur);
+        osc.type = 'sawtooth';
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2200, now);
+        filter.frequency.exponentialRampToValueAtTime(300, now + tw.t + tw.dur);
+
+        const st = now + tw.t;
+        osc.frequency.setValueAtTime(tw.f, st);
+        osc.frequency.exponentialRampToValueAtTime(tw.f * 3.8, st + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(tw.f * 0.9, st + tw.dur);
+
+        gain.gain.setValueAtTime(0.75, st);
+        gain.gain.exponentialRampToValueAtTime(0.001, st + tw.dur);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
 
-        osc.start(startT);
-        osc.stop(startT + b.dur);
+        osc.start(st);
+        osc.stop(st + tw.dur);
       });
     } catch (_) {}
   }
 
-  // Mini-Game: Capybara Cameo Ultra Chill Zen Gong + Deep Funny Snore/Purr
+  // Mini-Game: Capybara - Hilarious sleepy snore bubble pop + cartoon "bruh" bass honk
   playCapybaraRelax() {
     try {
       this.init();
-      // Super chill comedy gong with funny warm wobble
-      const gongNotes = [110.0, 220.0, 329.63, 440.0, 659.25];
-      gongNotes.forEach((freq, idx) => {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = idx < 2 ? 'sawtooth' : 'sine';
+      const now = this.ctx.currentTime;
 
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(400 + idx * 100, this.ctx.currentTime);
+      // 1. Deep funny cartoon snore vibration (low saw rumble ~55 Hz)
+      const snore = this.ctx.createOscillator();
+      const snoreLfo = this.ctx.createOscillator();
+      const snoreLfoGain = this.ctx.createGain();
+      const snoreGain = this.ctx.createGain();
+      const snoreFilter = this.ctx.createBiquadFilter();
 
-        const startT = this.ctx.currentTime + idx * 0.05;
-        osc.frequency.setValueAtTime(freq, startT);
-        osc.frequency.linearRampToValueAtTime(freq * 0.96, startT + 1.1);
+      snore.type = 'sawtooth';
+      snore.frequency.setValueAtTime(65, now);
+      snore.frequency.linearRampToValueAtTime(110, now + 0.35);
+      snore.frequency.linearRampToValueAtTime(50, now + 0.65);
 
-        gain.gain.setValueAtTime(0.65 / (idx + 1), startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 1.1);
+      // Snore flutter
+      snoreLfo.type = 'sine';
+      snoreLfo.frequency.setValueAtTime(18, now);
+      snoreLfoGain.gain.setValueAtTime(25, now);
+      snoreLfo.connect(snore.frequency);
 
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.masterGain);
+      snoreFilter.type = 'lowpass';
+      snoreFilter.frequency.setValueAtTime(320, now);
 
-        osc.start(startT);
-        osc.stop(startT + 1.1);
-      });
+      snoreGain.gain.setValueAtTime(0.7, now);
+      snoreGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+      snore.connect(snoreFilter);
+      snoreFilter.connect(snoreGain);
+      snoreGain.connect(this.masterGain);
+
+      snore.start(now);
+      snoreLfo.start(now);
+      snore.stop(now + 0.7);
+      snoreLfo.stop(now + 0.7);
+
+      // 2. Followed by funny high sleepy bubble pop ("bloop!")
+      const pop = this.ctx.createOscillator();
+      const popGain = this.ctx.createGain();
+      pop.type = 'sine';
+      pop.frequency.setValueAtTime(800, now + 0.55);
+      pop.frequency.exponentialRampToValueAtTime(1600, now + 0.68);
+      popGain.gain.setValueAtTime(0.65, now + 0.55);
+      popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.72);
+      pop.connect(popGain);
+      popGain.connect(this.masterGain);
+      pop.start(now + 0.55);
+      pop.stop(now + 0.72);
     } catch (_) {}
   }
 
