@@ -63,7 +63,7 @@ export default function GhostfaceRunnerGame({
   });
 
   // Game configuration
-  const [selectedDuration, setSelectedDuration] = useState(60); // 60s or 90s
+  const [selectedDuration, setSelectedDuration] = useState(120); // 60s, 90s, 120s (2m), 150s (2.5m)
 
   // Game flow states
   const [gameState, setGameState] = useState('idle'); // 'idle' | 'running' | 'dancing' | 'crying' | 'gameover'
@@ -74,7 +74,7 @@ export default function GhostfaceRunnerGame({
   const [wrongCount, setWrongCount] = useState(0);
 
   // Time Run States
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(120);
   const [runTime, setRunTime] = useState(0);
   const [timeBonusText, setTimeBonusText] = useState(null);
 
@@ -542,10 +542,7 @@ export default function GhostfaceRunnerGame({
             setBestStreak(b => Math.max(b, newStreak));
             setCorrectCount(c => c + 1);
 
-            // Time Run Bonus: +5 Seconds!
-            setTimeLeft(t => Math.min(180, t + 5));
-            setTimeBonusText('+5s ⏱️');
-            setTimeout(() => setTimeBonusText(null), 1600);
+            // Steady timer without adding/reducing time on answers
 
             // Floating canvas score popup
             g.particles.push({
@@ -570,8 +567,6 @@ export default function GhostfaceRunnerGame({
               // Streak musical chime reward!
               if (newStreak >= 2 && soundEngine.playComboStreak) {
                 setTimeout(() => soundEngine.playComboStreak(newStreak), 280);
-              } else if (soundEngine.playTimeBonusSound) {
-                setTimeout(() => soundEngine.playTimeBonusSound(), 260);
               }
             }
 
@@ -592,18 +587,11 @@ export default function GhostfaceRunnerGame({
             setStreak(0);
             setWrongCount(w => w + 1);
 
-            // Time Penalty: -3 Seconds!
-            setTimeLeft(t => Math.max(1, t - 3));
-            setTimeBonusText('-3s ⚠️');
-            setTimeout(() => setTimeBonusText(null), 1600);
-
+            // Steady timer without adding/reducing time on answers
             setExplanation(currentQuestion.explanation);
 
             if (soundEnabled) {
               soundEngine.playGhostfaceCry();
-              if (soundEngine.playTimePenaltySound) {
-                setTimeout(() => soundEngine.playTimePenaltySound(), 350);
-              }
             }
           }
         }
@@ -705,14 +693,7 @@ export default function GhostfaceRunnerGame({
               : 'bg-slate-800 text-cyan-300 border-slate-700'
           }`}>
             <Timer className="w-3.5 h-3.5" />
-            <span>{timeLeft}s</span>
-            {timeBonusText && (
-              <span className={`text-[10px] font-extrabold pl-1 animate-bounce ${
-                timeBonusText.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'
-              }`}>
-                {timeBonusText}
-              </span>
-            )}
+            <span>{formatTime(timeLeft)}</span>
           </div>
 
           {/* Score Counter */}
@@ -779,35 +760,32 @@ export default function GhostfaceRunnerGame({
                 Ghostface Logic Door Runner
               </h3>
               <p className="text-xs text-slate-300">
-                Massive pool of 170+ non-repeating questions! Choose the <strong>CORRECT door</strong> to make Ghostface dance, earn score points, and extend your time clock (+5s)! 🦆
+                Massive pool of 170+ non-repeating questions! Choose the <strong>CORRECT door</strong> to make Ghostface dance and build your score combo! 🦆
               </p>
             </div>
 
             {/* Run Duration Selector */}
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
               <span className="text-slate-400 font-semibold">Run Duration:</span>
-              <button
-                type="button"
-                onClick={() => setSelectedDuration(60)}
-                className={`px-3 py-1 rounded-xl font-bold transition border ${
-                  selectedDuration === 60 
-                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' 
-                    : 'bg-slate-800 text-slate-300 border-slate-700'
-                }`}
-              >
-                ⏱️ 60s Blitz
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedDuration(90)}
-                className={`px-3 py-1 rounded-xl font-bold transition border ${
-                  selectedDuration === 90 
-                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' 
-                    : 'bg-slate-800 text-slate-300 border-slate-700'
-                }`}
-              >
-                ⏱️ 90s Champion
-              </button>
+              {[
+                { sec: 60, label: '1m Blitz' },
+                { sec: 90, label: '1.5m Sprint' },
+                { sec: 120, label: '2.0m Master' },
+                { sec: 150, label: '2.5m Champion' }
+              ].map(d => (
+                <button
+                  key={d.sec}
+                  type="button"
+                  onClick={() => setSelectedDuration(d.sec)}
+                  className={`px-3 py-1 rounded-xl font-bold transition border ${
+                    selectedDuration === d.sec 
+                      ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' 
+                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500'
+                  }`}
+                >
+                  ⏱️ {d.label}
+                </button>
+              ))}
             </div>
 
             <button
@@ -823,14 +801,14 @@ export default function GhostfaceRunnerGame({
         {/* Dancing Toast Overlay */}
         {gameState === 'dancing' && (
           <div className="absolute top-2 bg-emerald-600/90 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow-xl flex items-center space-x-1.5 animate-bounce border border-emerald-300 z-20">
-            <span>🎉 CORRECT! 200 IQ MOVE! DANCE PARTY (+5s)! 🕺✨</span>
+            <span>🎉 CORRECT! 200 IQ MOVE! DANCE PARTY! 🕺✨</span>
           </div>
         )}
 
         {/* Crying Toast Overlay */}
         {gameState === 'crying' && (
           <div className="absolute top-2 bg-rose-700/95 text-white px-4 py-1.5 rounded-xl font-bold text-xs shadow-xl text-center space-y-0.5 animate-pulse border border-rose-400 max-w-sm z-20">
-            <div>😭 WRONG DOOR! GHOSTFACE IS SOBBING (-3s)! 💦</div>
+            <div>😭 WRONG DOOR! GHOSTFACE IS SOBBING! 💦</div>
             {explanation && (
               <p className="text-[10px] font-medium text-rose-100">
                 💡 Truth: {explanation}
