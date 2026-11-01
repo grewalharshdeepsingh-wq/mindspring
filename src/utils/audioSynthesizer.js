@@ -611,115 +611,149 @@ class SoundEngine {
 
   // Mini-Game: Catch Sound (Sweet harmonic sparkle)
   playCatchSound() {
-    this.playLotusCatch('star');
+    this.playMoneyCatch('coin');
   }
 
-  // Mini-Game: Lotus Calm Catch - Distinct Zen Tones per Item Shape
-  playLotusCatch(shape = 'star') {
+  // Mini-Game: Monster Money Catch - Rich Audio for Gold Coins, Cash, Gems, and Sacks
+  playMoneyCatch(type = 'coin') {
     try {
       this.init();
 
-      if (shape === 'droplet') {
-        // Water drop "bloop": downwards pitch swoop
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1100, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(460, this.ctx.currentTime + 0.12);
-
-        gain.gain.setValueAtTime(0.24, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
-
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.14);
-
-      } else if (shape === 'sakura') {
-        // Cherry blossom: sweet koto / acoustic chime pair
-        [880.0, 1108.73].forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          const startT = this.ctx.currentTime + idx * 0.05;
-          osc.frequency.setValueAtTime(freq, startT);
-
-          gain.gain.setValueAtTime(0.2, startT);
-          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.35);
-
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(startT);
-          osc.stop(startT + 0.35);
-        });
-
-      } else if (shape === 'crystal') {
-        // Sacred Crystal: Long resonant Tibetan singing bowl chime (528 Hz)
-        const osc = this.ctx.createOscillator();
+      if (type === 'cash') {
+        const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
+        osc1.type = 'triangle';
         osc2.type = 'sine';
-        osc.frequency.setValueAtTime(528, this.ctx.currentTime);
-        osc2.frequency.setValueAtTime(1056, this.ctx.currentTime); // 1st harmonic
+        osc1.frequency.setValueAtTime(1318.51, this.ctx.currentTime);
+        osc1.frequency.setValueAtTime(1760.00, this.ctx.currentTime + 0.08);
+        osc2.frequency.setValueAtTime(2093.00, this.ctx.currentTime + 0.08);
 
         gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.9);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
-        osc.connect(gain);
+        osc1.connect(gain);
         osc2.connect(gain);
         gain.connect(this.masterGain);
-
-        osc.start();
+        osc1.start();
         osc2.start();
-        osc.stop(this.ctx.currentTime + 0.9);
-        osc2.stop(this.ctx.currentTime + 0.9);
+        osc1.stop(this.ctx.currentTime + 0.35);
+        osc2.stop(this.ctx.currentTime + 0.35);
 
-      } else {
-        // Default / Star: Shimmering triad chime
-        [659.25, 830.61, 987.77].forEach((freq, idx) => {
+      } else if (type === 'gem' || type === 'diamond') {
+        [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, idx) => {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sine';
           const startT = this.ctx.currentTime + idx * 0.04;
           osc.frequency.setValueAtTime(freq, startT);
-          gain.gain.setValueAtTime(0.18, startT);
-          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.3);
+          gain.gain.setValueAtTime(0.22, startT);
+          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.4);
           osc.connect(gain);
           gain.connect(this.masterGain);
           osc.start(startT);
-          osc.stop(startT + 0.3);
+          osc.stop(startT + 0.4);
+        });
+
+      } else if (type === 'gold_bag') {
+        [783.99, 987.77, 1174.66, 1567.98].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          const startT = this.ctx.currentTime + idx * 0.05;
+          osc.frequency.setValueAtTime(freq, startT);
+          gain.gain.setValueAtTime(0.28, startT);
+          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.6);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(startT);
+          osc.stop(startT + 0.6);
+        });
+
+      } else {
+        [987.77, 1479.98].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          const startT = this.ctx.currentTime + idx * 0.04;
+          osc.frequency.setValueAtTime(freq, startT);
+          gain.gain.setValueAtTime(0.24, startT);
+          gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.32);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(startT);
+          osc.stop(startT + 0.32);
         });
       }
     } catch (e) {}
   }
 
-  // Mini-Game: Hazard / Stormcloud caught in Lotus Calm Catch (-15 pts)
-  playHazardHitSound() {
+  // Monster Chomp Sound (Gulp / bite)
+  playMonsterChomp() {
     try {
       this.init();
-      // Muffled low thunder rumble / soft warning thump
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, this.ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.14);
+    } catch (e) {}
+  }
+
+  // Bomb Explosion Sound
+  playBombExplosion() {
+    try {
+      this.init();
       const noise = this.createNoiseBuffer();
       const src = this.ctx.createBufferSource();
       src.buffer = noise;
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(280, this.ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.25);
+      filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.45);
 
-      const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
 
       src.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.masterGain);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.masterGain);
+
+      const boom = this.ctx.createOscillator();
+      const boomGain = this.ctx.createGain();
+      boom.type = 'sine';
+      boom.frequency.setValueAtTime(180, this.ctx.currentTime);
+      boom.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.4);
+
+      boomGain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+
+      boom.connect(boomGain);
+      boomGain.connect(this.masterGain);
 
       src.start();
-      src.stop(this.ctx.currentTime + 0.28);
+      boom.start();
+      src.stop(this.ctx.currentTime + 0.45);
+      boom.stop(this.ctx.currentTime + 0.45);
     } catch (e) {}
+  }
+
+  // Mini-Game: Lotus Calm Catch - Distinct Zen Tones per Item Shape (Backward Compatibility)
+  playLotusCatch(shape = 'star') {
+    this.playMoneyCatch(shape);
+  }
+
+  // Mini-Game: Hazard / Bomb hit sound
+  playHazardHitSound() {
+    this.playBombExplosion();
   }
 
   // Mini-Game: Subtle Lotus Glide ripple

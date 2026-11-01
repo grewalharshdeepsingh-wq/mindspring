@@ -35,7 +35,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
       name: 'Stress Mini-Games',
       icon: Gamepad2,
       color: 'from-violet-500 to-purple-600',
-      desc: 'Playable stress busters: Bubble Pop, Zen Stone Balancer & Lotus Catch.'
+      desc: 'Playable stress busters: Ghostface Door Runner, Bubble Pop, Alien Runner & Monster Money Catch.'
     },
     {
       id: 'breathing',

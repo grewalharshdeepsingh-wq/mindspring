@@ -1568,29 +1568,35 @@ function CosmicAlienRunner({ soundEnabled, onScoreUpdate, onSwitchGame, onComple
 }
 
 // ==========================================
-// 3. LOTUS CALM CATCH (60FPS Canvas, Zero Lag, Beautiful Glowing Shapes)
+// 3. MONSTER MONEY CATCH (60FPS Canvas, Open-Mouth Monster, Money & Bombs)
 // ==========================================
-function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
+function MonsterCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete }) {
   const [gameState, setGameState] = useState('idle');
   const [duration, setDuration] = useState(45);
   const [timeLeft, setTimeLeft] = useState(45);
   const [score, setScore] = useState(0);
   const [caughtCount, setCaughtCount] = useState(0);
+  const [bombsHit, setBombsHit] = useState(0);
   const [highScore, setHighScore] = useState(() => {
-    return parseInt(localStorage.getItem('mindspring_lotus_high') || '0', 10);
+    return parseInt(localStorage.getItem('mindspring_monster_high') || localStorage.getItem('mindspring_lotus_high') || '0', 10);
   });
 
   const canvasRef = useRef(null);
 
   const gRef = useRef({
-    basketX: 360,
-    targetBasketX: 360,
+    monsterX: 360,
+    targetMonsterX: 360,
     items: [],
     popups: [],
+    particles: [],
     score: 0,
     caught: 0,
+    bombs: 0,
     frame: 0,
-    nextSpawnTimer: 35,
+    nextSpawnTimer: 25,
+    chompAnim: 0,
+    hurtAnim: 0,
+    screenShake: 0,
     soundEnabled: true
   });
 
@@ -1599,17 +1605,23 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
   const handleStartGame = () => {
     setScore(0);
     setCaughtCount(0);
+    setBombsHit(0);
     setTimeLeft(duration);
 
     gRef.current = {
-      basketX: 360,
-      targetBasketX: 360,
+      monsterX: 360,
+      targetMonsterX: 360,
       items: [],
       popups: [],
+      particles: [],
       score: 0,
       caught: 0,
+      bombs: 0,
       frame: 0,
-      nextSpawnTimer: 25,
+      nextSpawnTimer: 20,
+      chompAnim: 0,
+      hurtAnim: 0,
+      screenShake: 0,
       soundEnabled
     };
 
@@ -1643,19 +1655,19 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const clientX = (e.clientX - rect.left) * scaleX;
-    gRef.current.targetBasketX = Math.max(50, Math.min(canvas.width - 50, clientX));
+    gRef.current.targetMonsterX = Math.max(60, Math.min(canvas.width - 60, clientX));
   };
 
   useEffect(() => {
     if (gameState !== 'playing') return;
     const handleKeyDown = (e) => {
       const g = gRef.current;
-      if (e.key === 'ArrowLeft' || e.key === 'a') {
-        g.targetBasketX = Math.max(50, g.targetBasketX - 35);
-      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        g.targetMonsterX = Math.max(60, g.targetMonsterX - 45);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         const canvas = canvasRef.current;
-        const maxW = canvas ? canvas.width - 50 : 670;
-        g.targetBasketX = Math.min(maxW, g.targetBasketX + 35);
+        const maxW = canvas ? canvas.width - 60 : 660;
+        g.targetMonsterX = Math.min(maxW, g.targetMonsterX + 45);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -1675,244 +1687,600 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
       const W = canvas.width;
       const H = canvas.height;
 
-      g.basketX += (g.targetBasketX - g.basketX) * 0.22;
+      // Smooth horizontal lerp
+      g.monsterX += (g.targetMonsterX - g.monsterX) * 0.24;
 
-      // 1. BACKGROUND
+      if (g.chompAnim > 0) g.chompAnim--;
+      if (g.hurtAnim > 0) g.hurtAnim--;
+      if (g.screenShake > 0.3) g.screenShake *= 0.88;
+      else g.screenShake = 0;
+
+      // 1. CLEAR & BACKGROUND (Arcade Vault Theme with Gold Coin Sparkles)
+      ctx.save();
+      if (g.screenShake > 0) {
+        ctx.translate((Math.random() - 0.5) * g.screenShake, (Math.random() - 0.5) * g.screenShake);
+      }
+
       const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-      bgGrad.addColorStop(0, '#0f172a');
-      bgGrad.addColorStop(0.5, '#064e3b');
-      bgGrad.addColorStop(1, '#022c22');
+      bgGrad.addColorStop(0, '#090d16');
+      bgGrad.addColorStop(0.5, '#1e1b4b');
+      bgGrad.addColorStop(1, '#0f172a');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // Water ripples
-      ctx.strokeStyle = 'rgba(45, 212, 191, 0.12)';
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 4; i++) {
-        const yLine = 120 + i * 65 + Math.sin(g.frame * 0.03 + i) * 8;
+      // Cyber / Vault floor grid
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.12)';
+      ctx.lineWidth = 1.5;
+      for (let x = 0; x < W; x += 60) {
         ctx.beginPath();
-        ctx.moveTo(0, yLine);
-        ctx.bezierCurveTo(W * 0.33, yLine + 12, W * 0.66, yLine - 12, W, yLine);
+        ctx.moveTo(x, H - 75);
+        ctx.lineTo(x + (x - W / 2) * 0.4, H);
         ctx.stroke();
       }
+      ctx.beginPath();
+      ctx.moveTo(0, H - 75);
+      ctx.lineTo(W, H - 75);
+      ctx.stroke();
 
-      // 2. SPAWN BEAUTIFUL FALLING OBJECTS
+      // Atmospheric floating gold dust
+      for (let i = 0; i < 8; i++) {
+        const sx = (i * 95 + g.frame * 0.7) % W;
+        const sy = (H * 0.2 + (i * 37 + Math.sin(g.frame * 0.04 + i) * 20)) % (H - 80);
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.25)';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.5 + (i % 2), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. SPAWN FALLING OBJECTS (Money vs Bombs)
       g.nextSpawnTimer--;
       if (g.nextSpawnTimer <= 0) {
         const rand = Math.random();
-        let shape = 'star';
-        let pts = 30;
-        let color = '#fbbf24';
+        let type = 'coin';
+        let pts = 25;
         let isHazard = false;
 
-        if (rand < 0.28) {
-          shape = 'dewdrop';
-          pts = 15;
-          color = '#38bdf8';
-        } else if (rand < 0.52) {
-          shape = 'sakura';
+        // Probabilities: 80% Money, 20% Bombs
+        if (rand < 0.38) {
+          type = 'coin'; // Gold dollar coin
           pts = 25;
-          color = '#f472b6';
-        } else if (rand < 0.74) {
-          shape = 'crystal';
-          pts = 40;
-          color = '#34d399';
-        } else if (rand < 0.88) {
-          shape = 'star';
-          pts = 35;
-          color = '#fbbf24';
+        } else if (rand < 0.62) {
+          type = 'cash'; // Green cash stack
+          pts = 50;
+        } else if (rand < 0.76) {
+          type = 'diamond'; // Glowing diamond gem
+          pts = 80;
+        } else if (rand < 0.84) {
+          type = 'gold_bag'; // Golden money sack
+          pts = 120;
+        } else if (rand < 0.94) {
+          type = 'bomb'; // Classic round black bomb
+          pts = -30;
+          isHazard = true;
         } else {
-          shape = 'storm';
-          pts = -15;
-          color = '#94a3b8';
+          type = 'tnt'; // Dynamite sticks
+          pts = -60;
           isHazard = true;
         }
 
         g.items.push({
-          x: 40 + Math.random() * (W - 80),
-          y: -20,
-          shape,
+          x: 55 + Math.random() * (W - 110),
+          y: -30,
+          type,
           pts,
-          color,
           isHazard,
           rot: Math.random() * Math.PI * 2,
-          speed: 1.8 + Math.random() * 1.4
+          rotSpeed: (Math.random() - 0.5) * 0.08,
+          speed: isHazard ? 2.3 + Math.random() * 1.5 : 2.0 + Math.random() * 1.6,
+          scale: 1.0
         });
 
-        g.nextSpawnTimer = 34 + Math.floor(Math.random() * 22);
+        g.nextSpawnTimer = 26 + Math.floor(Math.random() * 20);
       }
 
       // 3. DRAW FALLING OBJECTS
-      const basketY = H - 50;
-      const basketW = 92;
+      const mouthY = H - 65;
+      const mouthW = 100;
 
       g.items.forEach(item => {
         item.y += item.speed;
-        item.rot += 0.03;
+        item.rot += item.rotSpeed;
 
         ctx.save();
         ctx.translate(item.x, item.y);
         ctx.rotate(item.rot);
 
-        if (item.shape === 'star') {
-          ctx.fillStyle = '#fde047';
+        if (item.type === 'coin') {
+          // --- GOLD COIN ($) ---
           ctx.shadowColor = '#facc15';
           ctx.shadowBlur = 10;
+
+          // Outer Gold Rim
+          ctx.fillStyle = '#eab308';
           ctx.beginPath();
-          for (let p = 0; p < 5; p++) {
-            ctx.lineTo(Math.cos((18 + p * 72) * Math.PI / 180) * 14, -Math.sin((18 + p * 72) * Math.PI / 180) * 14);
-            ctx.lineTo(Math.cos((54 + p * 72) * Math.PI / 180) * 6, -Math.sin((54 + p * 72) * Math.PI / 180) * 6);
-          }
-          ctx.closePath();
+          ctx.arc(0, 0, 16, 0, Math.PI * 2);
           ctx.fill();
-        } else if (item.shape === 'dewdrop') {
-          ctx.fillStyle = '#38bdf8';
-          ctx.shadowColor = '#0284c7';
-          ctx.shadowBlur = 8;
-          ctx.beginPath();
-          ctx.arc(0, 4, 10, 0, Math.PI);
-          ctx.lineTo(0, -12);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(-3, 2, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (item.shape === 'sakura') {
-          ctx.fillStyle = '#f472b6';
-          ctx.shadowColor = '#ec4899';
-          ctx.shadowBlur = 8;
-          for (let petal = 0; petal < 5; petal++) {
-            ctx.beginPath();
-            ctx.ellipse(0, 7, 5, 8, (petal * 72) * Math.PI / 180, 0, Math.PI * 2);
-            ctx.fill();
-          }
+
+          // Inner Golden Face
           ctx.fillStyle = '#fef08a';
           ctx.beginPath();
-          ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+          ctx.arc(0, 0, 13, 0, Math.PI * 2);
           ctx.fill();
-        } else if (item.shape === 'crystal') {
-          ctx.fillStyle = '#34d399';
+
+          // Bevel Edge
+          ctx.strokeStyle = '#ca8a04';
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+
+          // Dollar Sign
+          ctx.fillStyle = '#854d0e';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', 0, 1);
+
+        } else if (item.type === 'cash') {
+          // --- GREEN CASH STACK ---
           ctx.shadowColor = '#10b981';
-          ctx.shadowBlur = 10;
-          ctx.beginPath();
-          ctx.moveTo(0, -12);
-          ctx.lineTo(10, 0);
-          ctx.lineTo(0, 12);
-          ctx.lineTo(-10, 0);
-          ctx.closePath();
-          ctx.fill();
+          ctx.shadowBlur = 12;
+
+          // Back bill offset
+          ctx.fillStyle = '#065f46';
+          ctx.fillRect(-20, -11, 40, 22);
+
+          // Front Stack
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(-22, -13, 44, 24);
+
           ctx.strokeStyle = '#a7f3d0';
           ctx.lineWidth = 1.5;
-          ctx.stroke();
-        } else {
-          ctx.fillStyle = '#64748b';
-          ctx.shadowColor = '#334155';
-          ctx.shadowBlur = 6;
+          ctx.strokeRect(-22, -13, 44, 24);
+
+          // Paper Currency White Ribbon / Band
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-6, -13, 12, 24);
+
+          // Dollar Sign
+          ctx.fillStyle = '#064e3b';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', 0, 0);
+
+        } else if (item.type === 'diamond') {
+          // --- SPARKLING DIAMOND GEM ---
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 15;
+
+          const gemGrad = ctx.createLinearGradient(-16, -16, 16, 16);
+          gemGrad.addColorStop(0, '#e0f2fe');
+          gemGrad.addColorStop(0.5, '#38bdf8');
+          gemGrad.addColorStop(1, '#0284c7');
+          ctx.fillStyle = gemGrad;
+
           ctx.beginPath();
-          ctx.arc(-7, 0, 8, 0, Math.PI * 2);
-          ctx.arc(7, 0, 8, 0, Math.PI * 2);
-          ctx.arc(0, -6, 9, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#fde047';
-          ctx.beginPath();
-          ctx.moveTo(-2, -3);
-          ctx.lineTo(3, 3);
-          ctx.lineTo(0, 4);
-          ctx.lineTo(2, 9);
-          ctx.lineTo(-3, 2);
-          ctx.lineTo(0, 1);
+          ctx.moveTo(0, -16);
+          ctx.lineTo(16, -4);
+          ctx.lineTo(10, 14);
+          ctx.lineTo(-10, 14);
+          ctx.lineTo(-16, -4);
           ctx.closePath();
+          ctx.fill();
+
+          // Facet lines
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, -16);
+          ctx.lineTo(0, 14);
+          ctx.moveTo(-16, -4);
+          ctx.lineTo(16, -4);
+          ctx.stroke();
+
+          // Sparkle star on top
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-4, -6, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else if (item.type === 'gold_bag') {
+          // --- TREASURE SACK / GOLD BAG ---
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 14;
+
+          // Sack Body
+          ctx.fillStyle = '#b45309';
+          ctx.beginPath();
+          ctx.arc(0, 4, 18, 0, Math.PI);
+          ctx.lineTo(14, -8);
+          ctx.lineTo(-14, -8);
+          ctx.closePath();
+          ctx.fill();
+
+          // Sack Ruffled Top
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.arc(0, -14, 10, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Red Tie Ribbon
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(-12, -9, 24, 3.5);
+
+          // Golden Dollar Logo
+          ctx.fillStyle = '#fef08a';
+          ctx.font = 'bold 15px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', 0, 5);
+
+        } else if (item.type === 'bomb') {
+          // --- CARTOON BLACK BOMB ---
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 12;
+
+          // Spherical Black Body
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(0, 3, 17, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Specular shine
+          ctx.fillStyle = '#475569';
+          ctx.beginPath();
+          ctx.arc(-5, -3, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Brass Fuse Cap
+          ctx.fillStyle = '#d97706';
+          ctx.fillRect(-4, -17, 8, 5);
+
+          // Curved Fuse Rope
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(0, -17);
+          ctx.quadraticCurveTo(8, -25, 6, -30);
+          ctx.stroke();
+
+          // Burning Spark / Flame (animated)
+          const sparkSize = 4 + Math.sin(g.frame * 0.4) * 2;
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.arc(6, -30, sparkSize, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(6, -30, sparkSize * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Danger Skull Stamp
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('☠', 0, 4);
+
+        } else if (item.type === 'tnt') {
+          // --- RED TNT DYNAMITE ---
+          ctx.shadowColor = '#dc2626';
+          ctx.shadowBlur = 14;
+
+          // 3 Sticks of Dynamite
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(-16, -14, 10, 28);
+          ctx.fillRect(-5, -14, 10, 28);
+          ctx.fillRect(6, -14, 10, 28);
+
+          // Black Binding Tape
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(-18, -4, 36, 8);
+
+          // TNT Label
+          ctx.fillStyle = '#fef08a';
+          ctx.font = 'black 9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('TNT', 0, 0);
+
+          // Burning Fuse Sparks
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, -14);
+          ctx.lineTo(2, -24);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.arc(2, -24, 4 + Math.sin(g.frame * 0.5) * 2, 0, Math.PI * 2);
           ctx.fill();
         }
 
         ctx.restore();
 
-        // Catch check
-        if (item.y >= basketY - 14 && item.y <= basketY + 16 && Math.abs(item.x - g.basketX) < basketW / 2 + 8) {
+        // Catch Collision Check with Monster's Open Mouth
+        if (item.y >= mouthY - 24 && item.y <= mouthY + 20 && Math.abs(item.x - g.monsterX) < mouthW / 2 + 10) {
           if (item.isHazard) {
-            g.score = Math.max(0, g.score - 15);
-            g.popups.push({ x: item.x, y: basketY - 10, text: '-15', color: '#f87171', alpha: 1 });
-            if (g.soundEnabled && soundEngine.playHazardHitSound) {
-              soundEngine.playHazardHitSound();
+            // EATEN A BOMB!
+            g.bombs += 1;
+            g.hurtAnim = 24;
+            g.screenShake = 18;
+            g.score = Math.max(0, g.score + item.pts); // Deduct points
+            g.popups.push({ x: item.x, y: mouthY - 30, text: `${item.pts} 💥`, color: '#ef4444', alpha: 1 });
+
+            // Fiery explosion particles
+            for (let p = 0; p < 18; p++) {
+              g.particles.push({
+                x: item.x,
+                y: mouthY - 10,
+                vx: (Math.random() - 0.5) * 7,
+                vy: -Math.random() * 6 - 2,
+                color: Math.random() > 0.5 ? '#f97316' : '#ef4444',
+                size: 3 + Math.random() * 4,
+                alpha: 1,
+                decay: 0.04
+              });
             }
+
+            if (g.soundEnabled && soundEngine.playBombExplosion) {
+              soundEngine.playBombExplosion();
+            }
+
           } else {
-            g.score += item.pts;
+            // EATEN MONEY!
             g.caught += 1;
-            if (g.soundEnabled) {
-              if (soundEngine.playLotusCatch) {
-                soundEngine.playLotusCatch(item.shape);
-              } else if (soundEngine.playCatchSound) {
-                soundEngine.playCatchSound();
-              }
+            g.chompAnim = 14;
+            g.score += item.pts;
+            g.popups.push({ x: item.x, y: mouthY - 25, text: `+${item.pts} 💰`, color: '#34d399', alpha: 1 });
+
+            // Sparkling gold particles
+            for (let p = 0; p < 12; p++) {
+              g.particles.push({
+                x: item.x,
+                y: mouthY - 10,
+                vx: (Math.random() - 0.5) * 5,
+                vy: -Math.random() * 5 - 1.5,
+                color: Math.random() > 0.4 ? '#facc15' : '#34d399',
+                size: 2.5 + Math.random() * 3,
+                alpha: 1,
+                decay: 0.035
+              });
             }
-            g.popups.push({ x: item.x, y: basketY - 10, text: `+${item.pts}`, color: '#34d399', alpha: 1 });
+
+            if (g.soundEnabled) {
+              if (soundEngine.playMonsterChomp) soundEngine.playMonsterChomp();
+              if (soundEngine.playMoneyCatch) soundEngine.playMoneyCatch(item.type);
+            }
           }
 
           setScore(g.score);
           setCaughtCount(g.caught);
+          setBombsHit(g.bombs);
           if (onScoreUpdate) onScoreUpdate(g.score);
 
           if (g.score > highScore) {
             setHighScore(g.score);
-            localStorage.setItem('mindspring_lotus_high', g.score.toString());
+            localStorage.setItem('mindspring_monster_high', g.score.toString());
           }
 
           item.y = 999;
         }
       });
 
-      g.items = g.items.filter(item => item.y < H + 30);
+      g.items = g.items.filter(item => item.y < H + 40);
 
-      // 4. DRAW LOTUS BASKET
+      // 4. DRAW THE OPEN-MOUTH MONSTER (Player Catcher)
       ctx.save();
-      ctx.translate(g.basketX, basketY);
+      ctx.translate(g.monsterX, mouthY);
 
-      // Water ripple
-      ctx.fillStyle = 'rgba(45, 212, 191, 0.25)';
+      // Hurt shake
+      if (g.hurtAnim > 0) {
+        ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 4);
+      }
+
+      // Soft shadow under monster
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
-      ctx.ellipse(0, 14, 52, 9, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 32, 58, 12, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Lily pad
-      ctx.fillStyle = '#059669';
-      ctx.beginPath();
-      ctx.ellipse(0, 10, 48, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Monster Body (Chubby Cute Violet Alien)
+      const bodyGrad = ctx.createLinearGradient(-45, -50, 45, 30);
+      if (g.hurtAnim > 0) {
+        bodyGrad.addColorStop(0, '#475569'); // Soot/ash blackened
+        bodyGrad.addColorStop(1, '#1e293b');
+      } else {
+        bodyGrad.addColorStop(0, '#8b5cf6');
+        bodyGrad.addColorStop(0.5, '#6d28d9');
+        bodyGrad.addColorStop(1, '#4c1d95');
+      }
+      ctx.fillStyle = bodyGrad;
 
-      // Lotus bowl
-      const lotusGrad = ctx.createLinearGradient(-45, 0, 45, 0);
-      lotusGrad.addColorStop(0, '#f59e0b');
-      lotusGrad.addColorStop(0.5, '#fb7185');
-      lotusGrad.addColorStop(1, '#14b8a6');
-      ctx.fillStyle = lotusGrad;
+      // Base & Feet
       ctx.beginPath();
-      ctx.arc(0, 0, 42, 0.15, Math.PI - 0.15);
+      ctx.moveTo(-48, 20);
+      ctx.quadraticCurveTo(-55, 32, -40, 32);
+      ctx.lineTo(-20, 32);
+      ctx.quadraticCurveTo(0, 34, 20, 32);
+      ctx.lineTo(40, 32);
+      ctx.quadraticCurveTo(55, 32, 48, 20);
+      ctx.quadraticCurveTo(55, -20, 38, -45);
+      ctx.quadraticCurveTo(0, -58, -38, -45);
+      ctx.quadraticCurveTo(-55, -20, -48, 20);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
 
+      // Monster Horns with glowing tips
+      const hornTipY = -68 + Math.sin(g.frame * 0.1) * 3;
+      // Left horn
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(-28, -44);
+      ctx.quadraticCurveTo(-45, -55, -42, hornTipY);
+      ctx.quadraticCurveTo(-34, -58, -18, -48);
+      ctx.closePath();
+      ctx.fill();
+
+      // Right horn
+      ctx.beginPath();
+      ctx.moveTo(28, -44);
+      ctx.quadraticCurveTo(45, -55, 42, hornTipY);
+      ctx.quadraticCurveTo(34, -58, 18, -48);
+      ctx.closePath();
+      ctx.fill();
+
+      // Glowing Cyan Horn Orbs
+      ctx.fillStyle = '#06b6d4';
+      ctx.shadowColor = '#06b6d4';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(-42, hornTipY, 4.5, 0, Math.PI * 2);
+      ctx.arc(42, hornTipY, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // --- BIG OPEN MOUTH (The Catching Zone) ---
+      const chompOffset = g.chompAnim > 0 ? Math.sin((g.chompAnim / 14) * Math.PI) * 14 : 0;
+      
+      // Outer Lip Ring
+      ctx.fillStyle = '#be185d';
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 52, 24 - chompOffset * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dark Throat Cavity
+      const throatGrad = ctx.createRadialGradient(0, 4, 5, 0, 4, 45);
+      throatGrad.addColorStop(0, '#1e1b4b');
+      throatGrad.addColorStop(1, '#450a0a');
+      ctx.fillStyle = throatGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 46, 20 - chompOffset * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bouncy Pink Tongue
+      const tongueWobble = Math.sin(g.frame * 0.15) * 3;
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath();
+      ctx.ellipse(0, 14 - chompOffset * 0.4, 26, 10 + tongueWobble, 0, 0, Math.PI);
+      ctx.fill();
+
+      // Sharp White Monster Teeth / Fangs
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 11px sans-serif';
+      // Upper Fangs (pointing down)
+      const upperY = -12 + chompOffset;
+      [-32, -16, 0, 16, 32].forEach(fx => {
+        ctx.beginPath();
+        ctx.moveTo(fx - 4, upperY);
+        ctx.lineTo(fx + 4, upperY);
+        ctx.lineTo(fx, upperY + 9);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // Lower Fangs (pointing up)
+      const lowerY = 18 - chompOffset * 0.5;
+      [-24, -8, 8, 24].forEach(fx => {
+        ctx.beginPath();
+        ctx.moveTo(fx - 4, lowerY);
+        ctx.lineTo(fx + 4, lowerY);
+        ctx.lineTo(fx, lowerY - 7);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // --- EXPRESSIVE EYES ON TOP ---
+      const eyeY = -34;
+      [-20, 20].forEach((eyeX, idx) => {
+        // White Eyeball
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, 13, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#4c1d95';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Pupil Logic
+        if (g.hurtAnim > 0) {
+          // Dizzy X_X / spiral
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(eyeX - 5, eyeY - 5);
+          ctx.lineTo(eyeX + 5, eyeY + 5);
+          ctx.moveTo(eyeX + 5, eyeY - 5);
+          ctx.lineTo(eyeX - 5, eyeY + 5);
+          ctx.stroke();
+        } else if (g.chompAnim > 0) {
+          // Dollar sign eyes $$!
+          ctx.fillStyle = '#10b981';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', eyeX, eyeY + 1);
+        } else {
+          // Pupils track nearest falling item
+          let lookDx = 0;
+          let lookDy = -3;
+          if (g.items.length > 0) {
+            const nearest = g.items.reduce((prev, curr) => (curr.y > prev.y ? curr : prev), g.items[0]);
+            lookDx = Math.max(-5, Math.min(5, (nearest.x - (g.monsterX + eyeX)) * 0.04));
+            lookDy = Math.max(-6, Math.min(2, (nearest.y - (mouthY + eyeY)) * 0.03));
+          }
+
+          ctx.fillStyle = '#1e1b4b';
+          ctx.beginPath();
+          ctx.arc(eyeX + lookDx, eyeY + lookDy, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Sparkle highlight
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(eyeX + lookDx - 2, eyeY + lookDy - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // Chest Badge
+      ctx.fillStyle = '#fef08a';
+      ctx.font = 'black 9px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('🌸 LOTUS', 0, 12);
+      ctx.fillText('NOM NOM! 😋', 0, 29);
 
       ctx.restore();
 
-      // 5. DRAW POPUPS
+      // 5. PARTICLES (Sparks & Explosions)
+      g.particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+      });
+      g.particles = g.particles.filter(p => p.alpha > 0);
+
+      // 6. POPUPS
       g.popups.forEach(pop => {
-        pop.y -= 1.2;
+        pop.y -= 1.3;
         pop.alpha -= 0.035;
         ctx.fillStyle = pop.color;
         ctx.globalAlpha = Math.max(0, pop.alpha);
-        ctx.font = 'bold 15px sans-serif';
+        ctx.font = 'bold 16px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(pop.text, pop.x, pop.y);
         ctx.globalAlpha = 1.0;
       });
       g.popups = g.popups.filter(pop => pop.alpha > 0);
+
+      ctx.restore(); // Restore shake translation
 
       animId = requestAnimationFrame(loop);
     };
@@ -1924,16 +2292,17 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
   if (gameState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-6">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-pink-500 via-rose-500 to-amber-500 text-white flex items-center justify-center text-4xl shadow-xl shadow-pink-500/20">
-          🌸
+        <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-600 via-violet-600 to-amber-500 text-white flex items-center justify-center text-4xl shadow-xl shadow-purple-500/25 animate-bounce" style={{ animationDuration: '2.5s' }}>
+          👹
         </div>
 
         <div className="space-y-1.5">
-          <h3 className="text-2xl font-heading font-extrabold text-slate-800 dark:text-white">
-            Lotus Calm Catch
+          <h3 className="text-2xl font-heading font-extrabold text-slate-800 dark:text-white flex items-center justify-center space-x-2">
+            <span>Monster Money Catch</span>
+            <span className="text-xl">💰💣</span>
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
-            Glide your golden lotus basket across the tranquil stream at silky-smooth 60 FPS! Catch glowing stars, dewdrops, and pink lotus petals while dodging stormy lightning clouds.
+            Control the hungry monster's big open mouth! Devour falling gold coins, cash stacks, and diamond sacks while dodging explosive bombs and TNT!
           </p>
         </div>
 
@@ -1948,13 +2317,23 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
               onClick={() => setDuration(s)}
               className={`px-3 py-1.5 rounded-xl font-bold transition ${
                 duration === s
-                  ? 'bg-rose-600 text-white shadow-md'
+                  ? 'bg-purple-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
               }`}
             >
               {s}s Session
             </button>
           ))}
+        </div>
+
+        <div className="flex items-center space-x-4 text-xs font-semibold text-slate-500">
+          <span className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400 font-bold">
+            <span>💰 Catch Money (+Pts)</span>
+          </span>
+          <span>•</span>
+          <span className="flex items-center space-x-1 text-rose-600 dark:text-rose-400 font-bold">
+            <span>💣 Dodge Bombs (-Pts)</span>
+          </span>
         </div>
 
         <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center space-x-1.5 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
@@ -1964,10 +2343,10 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
 
         <button
           onClick={handleStartGame}
-          className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-rose-600 via-pink-600 to-teal-600 hover:from-rose-700 hover:to-teal-700 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-rose-500/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-rose-400/20"
+          className="flex items-center space-x-3 px-8 py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-purple-500/30 transform hover:scale-105 active:scale-95 transition-all ring-4 ring-purple-400/20"
         >
           <Play className="w-5 h-5 fill-current" />
-          <span>Start Catching Calm</span>
+          <span>Start Munching Gold! 💰</span>
         </button>
       </div>
     );
@@ -1976,12 +2355,12 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
   if (gameState === 'gameover') {
     return (
       <GameResultCard
-        gameName="Lotus Calm Catch"
+        gameName="Monster Money Catch 👹💰"
         score={score}
         stats={[
-          { label: 'Serenity Objects', value: `${caughtCount} Caught` },
-          { label: 'Time Elapsed', value: `${duration}s` },
-          { label: 'Calm Focus Score', value: `${score} pts` }
+          { label: 'Money Devoured', value: `${caughtCount} Items` },
+          { label: 'Bombs Hit', value: `${bombsHit} Exploded` },
+          { label: 'Total Wealth Score', value: `${score} pts` }
         ]}
         onPlayAgain={handleStartGame}
         onSwitchGame={onSwitchGame}
@@ -1996,11 +2375,14 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     <div className="flex flex-col h-full select-none">
       <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
         <div className="flex items-center space-x-3">
-          <span className="font-mono bg-rose-600 text-white font-bold px-3 py-1 rounded-xl">
-            Score: {score}
+          <span className="font-mono bg-purple-600 text-white font-bold px-3 py-1 rounded-xl">
+            Wealth: {score} pts
           </span>
-          <span className="text-slate-500 font-semibold">
-            Caught: {caughtCount}
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+            Money: {caughtCount} 💰
+          </span>
+          <span className="text-rose-500 font-semibold hidden sm:inline">
+            Bombs: {bombsHit} 💣
           </span>
         </div>
 
@@ -2027,7 +2409,7 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
       <div
         onPointerMove={handlePointer}
         onPointerDown={handlePointer}
-        className="relative flex-1 min-h-[380px] rounded-2xl border border-teal-500/30 overflow-hidden my-3 cursor-ew-resize select-none touch-none shadow-inner"
+        className="relative flex-1 min-h-[380px] rounded-2xl border border-purple-500/30 overflow-hidden my-3 cursor-ew-resize select-none touch-none shadow-inner"
       >
         <canvas
           ref={canvasRef}
@@ -2036,17 +2418,17 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           className="w-full h-full block"
         />
 
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm px-3.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 pointer-events-none border border-white/20">
-          🌸 Glide your mouse, finger, or [← / →] arrows to catch serenity objects!
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-4 py-1 rounded-full text-[11px] font-bold text-amber-300 pointer-events-none border border-amber-400/30 flex items-center space-x-1.5 shadow-md">
+          <span>👹 Move mouth to eat Money (💰 💵 💎)! Dodge the Bombs (💣 💥)!</span>
         </div>
       </div>
 
       <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500 hidden sm:inline">Dodge the stormy lightning clouds!</span>
+        <span className="text-slate-500 hidden sm:inline">Use mouse, touch, or [← / →] / [A / D] keys!</span>
         <div className="flex items-center space-x-2 w-full sm:w-auto justify-center">
           <button
             onPointerDown={() => {
-              gRef.current.targetBasketX = Math.max(50, gRef.current.targetBasketX - 55);
+              gRef.current.targetMonsterX = Math.max(60, gRef.current.targetMonsterX - 60);
             }}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1 shadow-sm transition active:scale-95"
           >
@@ -2056,8 +2438,8 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
           <button
             onPointerDown={() => {
               const canvas = canvasRef.current;
-              const maxW = canvas ? canvas.width - 50 : 670;
-              gRef.current.targetBasketX = Math.min(maxW, gRef.current.targetBasketX + 55);
+              const maxW = canvas ? canvas.width - 60 : 660;
+              gRef.current.targetMonsterX = Math.min(maxW, gRef.current.targetMonsterX + 60);
             }}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border hover:bg-slate-200 font-bold flex items-center justify-center space-x-1 shadow-sm transition active:scale-95"
           >
@@ -2069,6 +2451,9 @@ function LotusCatchGame({ soundEnabled, onScoreUpdate, onSwitchGame, onComplete 
     </div>
   );
 }
+
+// Backward compatibility alias
+const LotusCatchGame = MonsterCatchGame;
 
 // ==========================================
 // MAIN MINI-GAME STUDIO COMPONENT
@@ -2100,11 +2485,11 @@ export default function MiniGameStudio({ onComplete }) {
       badge: 'Muffins & Fart Boost 💨'
     },
     {
-      id: 'lotus',
-      name: 'Lotus Calm Catch',
-      icon: '🌸',
-      desc: 'Glide to catch glowing stars & dewdrops at 60 FPS',
-      badge: '60 FPS Serenity'
+      id: 'monster',
+      name: 'Monster Money Catch 👹💰',
+      icon: '👹',
+      desc: 'Feed your hungry monster coins & cash stacks while dodging explosive bombs!',
+      badge: 'Money & Bombs 💣💰'
     }
   ];
 
@@ -2208,12 +2593,12 @@ export default function MiniGameStudio({ onComplete }) {
         {selectedGame === 'alien' && (
           <CosmicAlienRunner 
             soundEnabled={soundEnabled} 
-            onSwitchGame={() => setSelectedGame('lotus')}
+            onSwitchGame={() => setSelectedGame('monster')}
             onComplete={onComplete}
           />
         )}
-        {selectedGame === 'lotus' && (
-          <LotusCatchGame 
+        {(selectedGame === 'monster' || selectedGame === 'lotus') && (
+          <MonsterCatchGame 
             soundEnabled={soundEnabled} 
             onSwitchGame={() => setSelectedGame('ghostface')}
             onComplete={onComplete}

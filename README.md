@@ -51,7 +51,7 @@ Every day is structured into 4 balanced, self-paced micro-tasks:
   - **Funny Side Cameos:** Random characters (such as a cool Moonwalking Duck with sunglasses, Dancing Banana with maracas, and Chill Capybara) pop into the outer margins with funny speech bubbles without blocking gameplay.
 - **🫧 Stress Bubble Pop:** Pop away exam worries & build combo streaks.
 - **👽 Cosmic Alien Runner:** Claim donuts, muffins, and trigger 3-second Fart Boost flights!
-- **🌸 Lotus Calm Catch:** Glide to catch glowing stars & dewdrops at 60 FPS.
+- **👹 Monster Money Catch:** Open your hungry monster's mouth to catch falling cash, gold coins & diamonds while dodging explosive bombs and TNT!
 
 ### 5. 🧘 Interactive Wellness Studio
 - **Guided Breathing Studio:** Visual expanding animated lung/sphere with custom modes (Box Breathing, 4-7-8, Physiological Sigh) and harmonic chimes.
