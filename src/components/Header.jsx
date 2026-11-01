@@ -11,7 +11,8 @@ import {
   Table, 
   User, 
   Gamepad2,
-  Lightbulb
+  Lightbulb,
+  Smartphone
 } from 'lucide-react';
 
 export default function Header({ 
@@ -20,6 +21,7 @@ export default function Header({
   onOpenCheckIn, 
   onOpenCrisis, 
   onOpenProfile,
+  onOpenDownloadApp,
   studentName = '',
   schoolName = ''
 }) {
@@ -31,6 +33,7 @@ export default function Header({
     { id: 'table', label: 'Data & Progress', icon: Table },
     { id: 'soundscapes', label: 'Soundscapes', icon: Headphones },
     { id: 'growth', label: 'Growth Insights', icon: BarChart3 },
+    { id: 'download', label: 'Download APK 📱', icon: Smartphone },
     { id: 'counselor', label: 'Counselor & Safety', icon: HeartHandshake },
     { id: 'privacy', label: 'Profile & Privacy', icon: Lock },
   ];
@@ -57,7 +60,16 @@ export default function Header({
           )}
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <button
+            onClick={onOpenDownloadApp}
+            className="flex items-center space-x-1 bg-white/20 hover:bg-white/30 text-white px-2.5 py-0.5 rounded-full font-bold transition shadow-sm text-xs cursor-pointer active:scale-95"
+            title="Download MindSpring Android APK or install on mobile"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-amber-300" />
+            <span>Download APK / App</span>
+          </button>
+
           <button
             onClick={onOpenCrisis}
             className="flex items-center space-x-1 bg-rose-500/90 hover:bg-rose-600 text-white px-2.5 py-0.5 rounded-full font-semibold transition shadow-sm animate-pulse"
@@ -99,16 +111,28 @@ export default function Header({
             </div>
           </div>
 
-          {/* Quick Check-In CTA Button */}
-          <button
-            onClick={onOpenCheckIn}
-            className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-md hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 active:translate-y-0 transition ring-2 ring-emerald-400/30 whitespace-nowrap"
-            title="Start your daily 30-second mood & stress check-in"
-          >
-            <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '4s' }} />
-            <span>Quick Check-In</span>
-            <span className="hidden sm:inline bg-white/20 text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">30s</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            {/* Download APK / App header button */}
+            <button
+              onClick={onOpenDownloadApp}
+              className="hidden md:flex items-center space-x-1.5 px-3 py-2 rounded-2xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition shadow-sm"
+              title="Download Android APK"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Get APK</span>
+            </button>
+
+            {/* Quick Check-In CTA Button */}
+            <button
+              onClick={onOpenCheckIn}
+              className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-md hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 active:translate-y-0 transition ring-2 ring-emerald-400/30 whitespace-nowrap"
+              title="Start your daily 30-second mood & stress check-in"
+            >
+              <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '4s' }} />
+              <span>Quick Check-In</span>
+              <span className="hidden sm:inline bg-white/20 text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">30s</span>
+            </button>
+          </div>
         </div>
 
         {/* Full-Width Navigation Bar */}
@@ -120,7 +144,13 @@ export default function Header({
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.id === 'download') {
+                      onOpenDownloadApp();
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   className={`flex-1 min-w-fit flex items-center justify-center space-x-1.5 px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition text-center whitespace-nowrap ${
                     isActive
                       ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-600/40 shadow-sm'

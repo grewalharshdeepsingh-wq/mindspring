@@ -8,6 +8,7 @@ import ProgressTable from './components/ProgressTable';
 import CounselorCrisisModal from './components/CounselorCrisisModal';
 import PrivacySettingsModal from './components/PrivacySettingsModal';
 import CheckInModal from './components/CheckInModal';
+import DownloadAppModal from './components/DownloadAppModal';
 import ActivityRunnerModal from './components/ActivityRunnerModal';
 import MiniGameStudio from './components/MiniGameStudio';
 import ProblemSolver from './components/ProblemSolver';
@@ -22,6 +23,7 @@ export default function App() {
   // Modals
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isCrisisOpen, setIsCrisisOpen] = useState(false);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [runningActivity, setRunningActivity] = useState(null);
 
   // Appearance
@@ -196,6 +198,7 @@ export default function App() {
           onOpenCheckIn={() => setIsCheckInOpen(true)}
           onOpenCrisis={() => setIsCrisisOpen(true)}
           onOpenProfile={() => setActiveTab('privacy')}
+          onOpenDownloadApp={() => setIsDownloadOpen(true)}
           studentName={vault.studentProfile?.name}
           schoolName={vault.studentProfile?.school}
         />
@@ -312,7 +315,13 @@ export default function App() {
               <span>Personalised Student Wellness & Emotional Growth</span>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button 
+                onClick={() => setIsDownloadOpen(true)}
+                className="hover:text-emerald-600 transition font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1"
+              >
+                <span>📱 Download APK / App</span>
+              </button>
               <button 
                 onClick={() => setActiveTab('table')}
                 className="hover:text-emerald-600 transition underline decoration-slate-300"
@@ -369,6 +378,11 @@ export default function App() {
               ? 'scounselor024@gmail.com'
               : vault.studentProfile.counselorContact
           }
+        />
+
+        <DownloadAppModal
+          isOpen={isDownloadOpen}
+          onClose={() => setIsDownloadOpen(false)}
         />
 
         <ActivityRunnerModal

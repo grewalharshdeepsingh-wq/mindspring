@@ -78,6 +78,23 @@ Every day is structured into 4 balanced, self-paced micro-tasks:
 
 ---
 
+## 📱 Mobile Android App & APK Download
+
+MindSpring is available as a standalone Android application (`.apk`) and an offline-first installable Web App (PWA):
+
+### Option 1: Direct APK Installation (Android)
+1. Download **`mindspring.apk`** directly from the in-app **"Download APK"** button or from [GitHub Releases](https://github.com/grewalharshdeepsingh-wq/mindspring/releases).
+2. Tap the downloaded file in your Android notifications or Downloads folder.
+3. If prompted with *"Install unknown apps"*, allow permission for your browser.
+4. Tap **Install** and launch MindSpring from your home screen or app drawer!
+
+### Option 2: 1-Tap Home Screen Install (PWA / WebAPK)
+1. Open MindSpring in Chrome or Edge on your Android phone or tablet.
+2. Tap the in-app **"Install App"** button or tap the browser menu (`⋮`) -> **"Install App"** / **"Add to Home screen"**.
+3. The app will install instantly as a native WebAPK with full offline support.
+
+---
+
 ## 🛠️ How to Run
 
 1. Open PowerShell / Command Prompt in the project folder:
