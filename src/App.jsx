@@ -26,9 +26,25 @@ export default function App() {
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [runningActivity, setRunningActivity] = useState(null);
 
-  // Appearance
-  const [darkMode, setDarkMode] = useState(false);
+  // Appearance with persistent storage and system theme detection
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('mindspring_theme');
+    if (saved) return saved === 'dark';
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const [highContrast, setHighContrast] = useState(false);
+
+  // Sync dark theme with document root & localStorage
+  useEffect(() => {
+    localStorage.setItem('mindspring_theme', darkMode ? 'dark' : 'light');
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+    }
+  }, [darkMode]);
 
   // Initialize daily plan if empty
   useEffect(() => {
@@ -199,6 +215,8 @@ export default function App() {
           onOpenCrisis={() => setIsCrisisOpen(true)}
           onOpenProfile={() => setActiveTab('privacy')}
           onOpenDownloadApp={() => setIsDownloadOpen(true)}
+          darkMode={darkMode}
+          onToggleTheme={() => setDarkMode(prev => !prev)}
           studentName={vault.studentProfile?.name}
           schoolName={vault.studentProfile?.school}
         />
@@ -316,6 +334,13 @@ export default function App() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
+              <button 
+                onClick={() => setDarkMode(prev => !prev)}
+                className="hover:text-emerald-600 transition font-bold flex items-center space-x-1 text-slate-600 dark:text-slate-300"
+                title="Toggle Dark / Light Theme"
+              >
+                <span>{darkMode ? '☀️ Light Theme' : '🌙 Dark Theme'}</span>
+              </button>
               <button 
                 onClick={() => setIsDownloadOpen(true)}
                 className="hover:text-emerald-600 transition font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1"
