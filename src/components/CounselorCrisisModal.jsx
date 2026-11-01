@@ -11,7 +11,7 @@ import {
   Info
 } from 'lucide-react';
 
-export default function CounselorCrisisModal({ isOpen, onClose, counselorEmail = 'counselor@drishtischool.edu.in' }) {
+export default function CounselorCrisisModal({ isOpen, onClose, counselorEmail = 'scounselor024@gmail.com' }) {
   const [copied, setCopied] = useState(false);
   const [draftMessage, setDraftMessage] = useState(
     'Dear School Counselor,\n\nI am reaching out through the MindSpring wellness portal because I have been feeling overwhelmed with academic pressure and stress recently. I would like to schedule a private, confidential appointment to talk whenever you have time available.\n\nThank you,\nStudent (MindSpring Portal)'
@@ -118,7 +118,7 @@ export default function CounselorCrisisModal({ isOpen, onClose, counselorEmail =
 
             <div className="flex items-center justify-between pt-1">
               <span className="text-xs font-mono text-slate-500">
-                School Counselor: <strong className="text-slate-800 dark:text-slate-200">{counselorEmail}</strong>
+                School Counselor: <a href={`mailto:${counselorEmail}`} className="text-slate-800 dark:text-slate-200 font-bold hover:underline hover:text-emerald-600 transition">{counselorEmail}</a>
               </span>
               <button
                 onClick={handleCopyDraft}

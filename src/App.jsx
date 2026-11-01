@@ -362,7 +362,13 @@ export default function App() {
         <CounselorCrisisModal
           isOpen={isCrisisOpen}
           onClose={() => setIsCrisisOpen(false)}
-          counselorEmail={vault.studentProfile?.counselorContact || 'counselor@school.edu'}
+          counselorEmail={
+            (!vault.studentProfile?.counselorContact ||
+             vault.studentProfile?.counselorContact === 'counselor@school.edu' ||
+             vault.studentProfile?.counselorContact === 'counselor@drishtischool.edu.in')
+              ? 'scounselor024@gmail.com'
+              : vault.studentProfile.counselorContact
+          }
         />
 
         <ActivityRunnerModal

@@ -9,7 +9,7 @@ const DEFAULT_DATA = {
     studentId: '',
     school: '',
     grade: '',
-    counselorContact: '',
+    counselorContact: 'scounselor024@gmail.com',
     privacyEncryptionEnabled: true,
     highContrastMode: false,
     fontSize: 'normal',
@@ -88,7 +88,7 @@ export function loadMindSpringVault() {
               school: parsedOld.studentProfile?.school === 'Drishti Dr RC Jain Innovative Public School' ? '' : (parsedOld.studentProfile?.school || ''),
               studentId: '',
               grade: '',
-              counselorContact: '',
+              counselorContact: (parsedOld.studentProfile?.counselorContact && parsedOld.studentProfile.counselorContact !== 'counselor@school.edu' && parsedOld.studentProfile.counselorContact !== 'counselor@drishtischool.edu.in') ? parsedOld.studentProfile.counselorContact : 'scounselor024@gmail.com',
             }
           };
           saveMindSpringVault(cleaned);
