@@ -1292,7 +1292,8 @@ export function analyzeAndSolveProblem({
           to: "Reaching out for help is an act of supreme courage, not weakness."
         },
         audioScript: `${displayName}, you are not alone. Please pause, take a deep breath, and reach out to a trusted adult or counselor. Your life has immense value.`
-      }
+      },
+      summarizedParagraph: `${displayName ? displayName + ', please' : 'Please'} stop what you are doing and take a gentle breath. Your safety, life, and emotional well-being are infinitely more important than any grade or pressure. You do not have to carry this alone. Please reach out to a trusted counselor, adult, or call one of our 24/7 crisis hotlines immediately. Real support is ready for you right now.`
     };
   }
 
@@ -1323,6 +1324,7 @@ export function analyzeAndSolveProblem({
   }
 
   // 4. Build Structured Result
+  let finalResult;
   if (matchedArchetype) {
     const built = matchedArchetype.build({
       studentName: displayName,
@@ -1331,18 +1333,62 @@ export function analyzeAndSolveProblem({
       rawText: cleanText
     });
 
-    return {
+    finalResult = {
       isCrisis: false,
       diagnosedArchetype: matchedArchetype.title,
       detectedEntities: context,
       ...built
     };
+  } else {
+    // 5. Universal Contextual Fallback for nuanced/hybrid dilemmas
+    finalResult = buildUniversalDynamicSolution({
+      category,
+      studentName: displayName,
+      context
+    });
   }
 
-  // 5. Universal Contextual Fallback for nuanced/hybrid dilemmas
-  return buildUniversalDynamicSolution({
-    category,
-    studentName: displayName,
-    context
-  });
+  finalResult.summarizedParagraph = buildRobotSummarizedAnswer(finalResult, displayName);
+  return finalResult;
+}
+
+/**
+ * Constructs a cohesive, compassionate summarized paragraph
+ * spoken aloud by the AI Robot Mentor.
+ */
+export function buildRobotSummarizedAnswer(result, studentName = '') {
+  if (!result) return '';
+  const name = studentName?.trim() || '';
+
+  if (result.isCrisis) {
+    return `${name ? name + ', please' : 'Please'} stop what you are doing and take a gentle breath. Your safety, life, and emotional well-being are infinitely more important than any grade or pressure. You do not have to carry this alone. Please reach out to a trusted counselor, adult, or call one of our 24/7 crisis hotlines immediately. Real support is ready for you right now.`;
+  }
+
+  const greeting = name ? `Hey ${name}!` : `Hey friend!`;
+
+  // 1. Core Understanding sentence
+  const rawSummary = result.understanding?.summary || "I understand how challenging this feels.";
+  const firstSentence = rawSummary.split(/(?<=[.?!])\s+/)[0] || rawSummary;
+
+  // 2. Actionable immediate strategy
+  let actionText = '';
+  if (result.solution?.immediate5Min) {
+    actionText = `Here is your immediate game plan: ${result.solution.immediate5Min.trim()}`;
+  } else if (result.solution?.steps?.[0]?.action) {
+    actionText = `Here is your first step: ${result.solution.steps[0].action.trim()}`;
+  } else {
+    actionText = `Take a five-minute pause, drink a glass of water, and focus on the single smallest step in front of you.`;
+  }
+
+  // 3. Affirmation and motivation
+  let affirmation = result.motivation?.affirmation?.trim() || '';
+  if (affirmation && !affirmation.endsWith('.')) {
+    affirmation += '.';
+  }
+
+  const motivationEnding = affirmation
+    ? `Remember: ${affirmation} Take a deep breath—you have the strength to tackle this!`
+    : `You have navigated tough challenges before, and you can handle this one too. Take a deep breath and take that first step!`;
+
+  return `${greeting} I hear you. ${firstSentence} ${actionText} ${motivationEnding}`;
 }

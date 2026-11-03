@@ -6,6 +6,7 @@ import {
   CheckCircle2, 
   Volume2, 
   VolumeX, 
+  Play, 
   Copy, 
   Check, 
   PlusCircle, 
@@ -21,15 +22,18 @@ import {
   Heart,
   History,
   Trash2,
-  Share2
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
   analyzeAndSolveProblem, 
+  buildRobotSummarizedAnswer,
   SAMPLE_PROBLEMS, 
   PROBLEM_CATEGORIES 
 } from '../utils/problemSolverEngine';
 import { ACTIVITY_CATALOG } from '../data/activityCatalog';
+import RobotSolverAvatar from './RobotSolverAvatar';
 
 const HISTORY_KEY = 'mindspring_problem_solver_history_v1';
 
@@ -46,16 +50,19 @@ export default function ProblemSolver({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [result, setResult] = useState(null);
-  const [activeResultTab, setActiveResultTab] = useState('all'); // 'all' | 'understanding' | 'solution' | 'motivation'
   
+  // Robot Voice States
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [hasFinishedSpeaking, setHasFinishedSpeaking] = useState(false);
+  const speechRef = useRef(null);
+
+  // Optional full detail accordion
+  const [showFullDetails, setShowFullDetails] = useState(false);
+
   // Feedback states
   const [copied, setCopied] = useState(false);
   const [addedToPlan, setAddedToPlan] = useState(false);
   const [savedToJournal, setSavedToJournal] = useState(false);
-
-  // Audio Speech state
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const speechRef = useRef(null);
 
   // History state
   const [history, setHistory] = useState(() => {
@@ -68,10 +75,20 @@ export default function ProblemSolver({
   });
   const [showHistory, setShowHistory] = useState(false);
 
-  // Stop speech if component unmounts
+  // Cleanup speech synthesis on unmount or tab switch
   useEffect(() => {
+    const handleVoicesChanged = () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+    }
+
     return () => {
-      if (window.speechSynthesis) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
     };
@@ -84,6 +101,71 @@ export default function ProblemSolver({
     setResult(null);
   };
 
+  /**
+   * Speaks the given summarized paragraph using Web Speech API
+   */
+  const speakSummarizedAnswer = (textToSpeak) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      return;
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    setHasFinishedSpeaking(false);
+    setIsSpeaking(true);
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.rate = 0.96;
+    utterance.pitch = 1.05; // Slightly cheerful, friendly tone
+
+    // Choose pleasant English voice
+    const voices = window.speechSynthesis.getVoices();
+    const friendlyVoice = voices.find(v => 
+      v.lang.startsWith('en') && 
+      (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Karen') || v.name.includes('Daniel'))
+    ) || voices.find(v => v.lang.startsWith('en'));
+
+    if (friendlyVoice) {
+      utterance.voice = friendlyVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      setHasFinishedSpeaking(false);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setHasFinishedSpeaking(true);
+    };
+
+    utterance.onerror = (e) => {
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
+        console.warn('Robot speech synthesis note:', e);
+      }
+      setIsSpeaking(false);
+    };
+
+    speechRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleStopSpeech = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  /**
+   * Repeat option after robot finishes with answer
+   */
+  const handleRepeatSpeech = () => {
+    if (!result) return;
+    const text = result.summarizedParagraph || buildRobotSummarizedAnswer(result, studentName);
+    speakSummarizedAnswer(text);
+  };
+
   const handleSolve = () => {
     if (!problemText.trim()) return;
 
@@ -92,14 +174,12 @@ export default function ProblemSolver({
     setResult(null);
     setAddedToPlan(false);
     setSavedToJournal(false);
+    setHasFinishedSpeaking(false);
+    setShowFullDetails(false);
 
     // Stop existing audio
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+    handleStopSpeech();
 
-    // Dynamic staged progression for realistic psychological analysis
     setTimeout(() => setAnalysisStep(2), 500);
     setTimeout(() => setAnalysisStep(3), 1000);
 
@@ -111,20 +191,28 @@ export default function ProblemSolver({
         studentName
       });
 
+      // Ensure summarized paragraph is ready
+      if (!analysis.summarizedParagraph) {
+        analysis.summarizedParagraph = buildRobotSummarizedAnswer(analysis, studentName);
+      }
+
       setResult(analysis);
       setIsAnalyzing(false);
       setAnalysisStep(0);
 
-      // Trigger celebration if not crisis
+      // Trigger celebration confetti
       if (!analysis.isCrisis) {
         try {
           confetti({
-            particleCount: 50,
-            spread: 60,
-            origin: { y: 0.7 }
+            particleCount: 55,
+            spread: 65,
+            origin: { y: 0.65 }
           });
         } catch (e) {}
       }
+
+      // Automatically speak the summarized paragraph through the robot!
+      speakSummarizedAnswer(analysis.summarizedParagraph);
 
       // Save to local history
       const newHistoryItem = {
@@ -133,6 +221,7 @@ export default function ProblemSolver({
         problemSummary: problemText.slice(0, 100) + (problemText.length > 100 ? '...' : ''),
         domain: analysis.domainLabel || 'Student Challenge',
         affirmation: analysis.motivation?.affirmation || '',
+        summarizedParagraph: analysis.summarizedParagraph,
         fullData: analysis
       };
 
@@ -144,65 +233,9 @@ export default function ProblemSolver({
     }, 1500);
   };
 
-  const handleToggleSpeech = () => {
-    if (!('speechSynthesis' in window)) {
-      alert("Text-to-speech is not supported in this browser.");
-      return;
-    }
-
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-
-    if (!result?.motivation?.pepTalk) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(result.motivation.pepTalk);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-
-    // Pick gentle voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const friendlyVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Karen')));
-    if (friendlyVoice) {
-      utterance.voice = friendlyVoice;
-    }
-
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    speechRef.current = utterance;
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const handleCopy = () => {
+  const handleCopySummarized = () => {
     if (!result) return;
-    const textToCopy = `MINDSPRING PROBLEM SOLVER & MOTIVATOR
--------------------------------------------------
-[UNDERSTANDING & ROOT CAUSE]
-${result.understanding.summary}
-Root Trigger: ${result.understanding.rootCause}
-Validation: ${result.understanding.validation}
-
-[ACTIONABLE SOLUTION]
-⚡ Immediate 5-Minute Relief: ${result.solution.immediate5Min}
-
-Step-by-Step Strategic Roadmap:
-1. ${result.solution.steps[0]?.title}: ${result.solution.steps[0]?.action}
-2. ${result.solution.steps[1]?.title}: ${result.solution.steps[1]?.action}
-3. ${result.solution.steps[2]?.title}: ${result.solution.steps[2]?.action}
-
-[MOTIVATIONAL BOOST & POWER AFFIRMATION]
-${result.motivation.pepTalk}
-
-🌟 Power Affirmation: "${result.motivation.affirmation}"
-🔄 Mindset Shift: From "${result.motivation.mindsetShift?.from}" ➔ To "${result.motivation.mindsetShift?.to}"
--------------------------------------------------
-Generated by MindSpring Student Wellness`;
-
+    const textToCopy = result.summarizedParagraph || buildRobotSummarizedAnswer(result, studentName);
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -213,11 +246,11 @@ Generated by MindSpring Student Wellness`;
     const task = {
       id: `problem-solve-${Date.now()}`,
       instanceId: `problem-solve-${Date.now()}`,
-      title: result.solution.steps[0]?.title || 'Solve Today’s Challenge',
+      title: result.solution?.steps?.[0]?.title || 'Robo-Mentor Action Step',
       durationMinutes: 5,
       category: 'action',
-      description: result.solution.immediate5Min || result.solution.actionItem,
-      benefit: 'Targeted micro-action to break panic and restore clarity.',
+      description: result.solution?.immediate5Min || result.solution?.actionItem || '5-minute micro victory.',
+      benefit: 'Targeted micro-action recommended by Robo-Mentor.',
       icon: 'Target',
       completed: false,
       userRating: 0
@@ -234,7 +267,7 @@ Generated by MindSpring Student Wellness`;
       date: new Date().toISOString().split('T')[0],
       moodBefore: intensity === 'high' ? 'High Overwhelm' : 'Stuck & Anxious',
       moodAfter: 'Empowered & Clear 💡',
-      summary: `Overcame problem: "${problemText.slice(0, 60)}...". Action taken: ${result.solution.immediate5Min} Affirmation: "${result.motivation.affirmation}"`,
+      summary: `Robo-Mentor Voice Guidance: "${(result.summarizedParagraph || '').slice(0, 120)}..." Affirmation: "${result.motivation?.affirmation || ''}"`,
       rating: 5
     };
     onSaveReflection(entry);
@@ -250,7 +283,6 @@ Generated by MindSpring Student Wellness`;
       return;
     }
 
-    // Match catalog activity
     const matched = ACTIVITY_CATALOG.find(a => 
       a.id === toolId || 
       a.interactiveComponent === toolId ||
@@ -261,9 +293,18 @@ Generated by MindSpring Student Wellness`;
   };
 
   const handleLoadHistoryItem = (item) => {
-    setResult(item.fullData);
+    const loadedData = item.fullData || {};
+    if (!loadedData.summarizedParagraph) {
+      loadedData.summarizedParagraph = item.summarizedParagraph || buildRobotSummarizedAnswer(loadedData, studentName);
+    }
+    setResult(loadedData);
     setProblemText(item.problemSummary);
     setShowHistory(false);
+    setHasFinishedSpeaking(false);
+    setShowFullDetails(false);
+
+    // Speak loaded solution
+    speakSummarizedAnswer(loadedData.summarizedParagraph);
   };
 
   const handleDeleteHistoryItem = (e, id) => {
@@ -275,6 +316,8 @@ Generated by MindSpring Student Wellness`;
     } catch (err) {}
   };
 
+  const currentSummarizedText = result?.summarizedParagraph || (result ? buildRobotSummarizedAnswer(result, studentName) : '');
+
   return (
     <div className="space-y-6 animate-fade-in pb-12 max-w-5xl mx-auto">
       
@@ -285,20 +328,19 @@ Generated by MindSpring Student Wellness`;
             <div className="flex items-center space-x-2">
               <span className="text-[11px] font-extrabold uppercase tracking-widest bg-white/20 text-white px-3 py-1 rounded-full backdrop-blur-sm flex items-center space-x-1.5">
                 <Sparkles className="w-3 h-3 text-amber-200" />
-                <span>Empathetic AI Mentor</span>
+                <span>AI Robot Voice Mentor</span>
               </span>
               <span className="text-emerald-100 text-xs font-medium">
-                CBT • BJ Fogg Micro-Habits • Emotional Validation
+                Summarized Spoken Guidance • Repeatable Audio
               </span>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight">
-              Problem Solver & Daily Motivator
+              Problem Solver & Robo-Mentor
             </h2>
 
             <p className="text-emerald-50 text-xs sm:text-sm leading-relaxed max-w-xl">
-              Type whatever is stressing you out—exam panic, procrastination, parental pressure, or social dilemmas. 
-              Get an instant psychological breakdown, a realistic 3-step action plan, and high-impact personal motivation.
+              Type your problem below. Our friendly AI Robot will summarize the exact solution in a single spoken paragraph, giving you immediate clarity with a repeat option whenever you need to hear it again.
             </p>
           </div>
 
@@ -320,14 +362,14 @@ Generated by MindSpring Student Wellness`;
         <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-emerald-300/20 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* History Drawer/Card */}
+      {/* History Drawer */}
       {showHistory && (
         <div className="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg space-y-3 animate-fade-in">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center space-x-2">
               <History className="w-4 h-4 text-emerald-600" />
               <h4 className="font-heading font-bold text-sm text-slate-800 dark:text-white">
-                Saved Solutions & Past Encouragements
+                Saved Solutions & Past Spoken Answers
               </h4>
             </div>
             <button
@@ -365,8 +407,8 @@ Generated by MindSpring Student Wellness`;
 
                 <div className="flex items-center justify-between pt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
                   <span className="group-hover:underline flex items-center space-x-1">
-                    <span>Revisit Solution</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <Volume2 className="w-3 h-3 text-cyan-600" />
+                    <span>Re-listen with Robot</span>
                   </span>
                   <button
                     onClick={(e) => handleDeleteHistoryItem(e, item.id)}
@@ -390,18 +432,18 @@ Generated by MindSpring Student Wellness`;
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
               <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-              <span>Tap a Common Student Situation to Try:</span>
+              <span>Tap a Student Situation or Type Below:</span>
             </span>
-            <span className="text-[11px] text-slate-400 hidden sm:inline">Or write your custom problem below</span>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">Robot will summarize and speak the answer</span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 no-scrollbar -mx-1 px-1">
             {SAMPLE_PROBLEMS.map((sample, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSelectSample(sample)}
-                className="text-xs px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition font-medium text-left"
+                className="text-xs px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition font-medium text-left whitespace-nowrap sm:whitespace-normal shrink-0 sm:shrink active:scale-95"
               >
                 {sample.label}
               </button>
@@ -418,7 +460,7 @@ Generated by MindSpring Student Wellness`;
             </label>
             {problemText && (
               <button
-                onClick={() => { setProblemText(''); setResult(null); }}
+                onClick={() => { setProblemText(''); setResult(null); handleStopSpeech(); }}
                 className="text-xs text-slate-400 hover:text-rose-500 transition flex items-center space-x-1"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -430,13 +472,13 @@ Generated by MindSpring Student Wellness`;
           <textarea
             value={problemText}
             onChange={(e) => setProblemText(e.target.value)}
-            placeholder="Type openly here... e.g. 'I have a huge biology exam tomorrow morning, 4 chapters left, I'm panicking and can't focus. I'm afraid I'll let my parents down.'"
-            rows={4}
-            className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition resize-y"
+            placeholder="Type your challenge openly here... e.g. 'I have a biology exam tomorrow morning, 4 chapters left, I'm panicking and can't focus. I feel like I'm going to fail.'"
+            rows={3}
+            className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-base sm:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition resize-y"
           />
 
           <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-            <span>100% Confidential & On-Device • No judgment, only supportive guidance.</span>
+            <span>Confidential & Private • Spoken aloud directly by your Robot Mentor</span>
             <span>{problemText.length} characters</span>
           </div>
         </div>
@@ -460,7 +502,7 @@ Generated by MindSpring Student Wellness`;
             </select>
           </div>
 
-          {/* Distress / Urgency Meter */}
+          {/* Distress Level */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
               <span>Distress Level</span>
@@ -478,7 +520,7 @@ Generated by MindSpring Student Wellness`;
                   key={level.id}
                   type="button"
                   onClick={() => setIntensity(level.id)}
-                  className={`py-2 px-2 text-xs font-bold rounded-xl border transition text-center ${
+                  className={`py-2.5 px-2 text-xs font-bold rounded-xl border transition text-center min-h-[44px] flex items-center justify-center active:scale-95 ${
                     intensity === level.id 
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
                       : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 ' + level.color
@@ -497,25 +539,25 @@ Generated by MindSpring Student Wellness`;
             type="button"
             disabled={!problemText.trim() || isAnalyzing}
             onClick={handleSolve}
-            className={`w-full py-3.5 px-6 rounded-2xl font-heading font-extrabold text-sm sm:text-base flex items-center justify-center space-x-2 transition shadow-lg ${
+            className={`w-full py-4 px-6 rounded-2xl font-heading font-extrabold text-sm sm:text-base flex items-center justify-center space-x-2 transition shadow-lg ${
               !problemText.trim() || isAnalyzing
                 ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/20 transform hover:-translate-y-0.5 active:translate-y-0'
+                : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white shadow-emerald-500/25 transform hover:-translate-y-0.5 active:translate-y-0 ring-2 ring-emerald-400/20'
             }`}
           >
             {isAnalyzing ? (
               <div className="flex items-center space-x-3">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 <span>
-                  {analysisStep === 1 ? '🧠 Understanding your situation...' :
-                   analysisStep === 2 ? '💡 Formulating 3-tier practical solution...' :
-                   '🔥 Crafting personalized motivational boost...'}
+                  {analysisStep === 1 ? '🤖 Robot is reading your problem...' :
+                   analysisStep === 2 ? '⚡ Formulating practical 1-paragraph game plan...' :
+                   '🎙️ Synthesizing voice answer...'}
                 </span>
               </div>
             ) : (
               <>
                 <Sparkles className="w-5 h-5 text-amber-300 animate-spin" style={{ animationDuration: '6s' }} />
-                <span>Understand Problem, Get Solution & Motivate Me</span>
+                <span>Ask AI Robot for Voice Solution</span>
                 <ArrowRight className="w-4 h-4 ml-1" />
               </>
             )}
@@ -523,11 +565,31 @@ Generated by MindSpring Student Wellness`;
         </div>
       </div>
 
-      {/* RESULT SECTION */}
-      {result && (
+      {/* ANALYZING STATE ANIMATION */}
+      {isAnalyzing && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-sm animate-fade-in">
+          <RobotSolverAvatar
+            isAnalyzing={true}
+            isSpeaking={false}
+            hasFinished={false}
+            studentName={studentName}
+          />
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="font-heading font-extrabold text-lg text-slate-800 dark:text-white">
+              Your AI Robot is analyzing your situation...
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Extracting the core challenge and preparing a spoken personalized answer.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* RESULT SECTION - ROBOT VOICE ANSWER STAGE */}
+      {result && !isAnalyzing && (
         <div className="space-y-6 animate-fade-in">
           
-          {/* Safety / Crisis Alert if detected */}
+          {/* Safety Alert (Crisis detected) */}
           {result.isCrisis && (
             <div className="bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center space-x-3 text-rose-700 dark:text-rose-300 font-heading font-extrabold text-lg">
@@ -535,7 +597,7 @@ Generated by MindSpring Student Wellness`;
                 <span>Immediate Safety Support</span>
               </div>
               <p className="text-sm text-rose-900 dark:text-rose-200 leading-relaxed">
-                {result.understanding.validation}
+                {result.understanding?.validation || 'Your life and safety are the top priority.'}
               </p>
               <div className="flex flex-wrap gap-3 pt-2">
                 <button
@@ -548,337 +610,279 @@ Generated by MindSpring Student Wellness`;
             </div>
           )}
 
-          {/* Action Toolbar on Result */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center space-x-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                Diagnosis Complete • {result.domainLabel || 'Targeted Strategy'}
-              </span>
-            </div>
+          {/* MAIN ROBOT VOICE ANSWER CARD */}
+          <div className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 border-2 border-cyan-500/30 dark:border-cyan-500/20 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+            
+            {/* Ambient Background Gradient Flares */}
+            <div className="absolute top-0 right-1/4 w-80 h-80 bg-cyan-400/10 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Audio Listen Button */}
-              <button
-                onClick={handleToggleSpeech}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                  isSpeaking
-                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 animate-pulse'
-                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                }`}
-                title="Listen to motivational audio pep talk"
-              >
-                {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                <span>{isSpeaking ? 'Stop Audio' : 'Listen to Motivation'}</span>
-              </button>
-
-              {/* Copy Summary */}
-              <button
-                onClick={handleCopy}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                <span>{copied ? 'Copied!' : 'Copy Plan'}</span>
-              </button>
-
-              {/* Add to Daily Plan */}
-              <button
-                onClick={handleAddActionToDailyPlan}
-                disabled={addedToPlan}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                  addedToPlan
-                    ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200'
-                    : 'bg-teal-600 hover:bg-teal-700 text-white'
-                }`}
-              >
-                {addedToPlan ? <Check className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
-                <span>{addedToPlan ? 'Added to Plan!' : 'Add Action to Plan'}</span>
-              </button>
-
-              {/* Save to Journal */}
-              <button
-                onClick={handleSaveToGrowthJournal}
-                disabled={savedToJournal}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                  savedToJournal
-                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
-                }`}
-              >
-                {savedToJournal ? <Check className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
-                <span>{savedToJournal ? 'Saved to Journal!' : 'Save Breakthrough'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Diagnostic Context Bar */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-sm border border-indigo-900/40 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-cyan-300">
-                  Identified Stress Pattern:
-                </span>
-                <span className="text-sm font-heading font-extrabold text-white">
-                  {result.diagnosedArchetype || result.domainLabel}
+            {/* Header Strip with Domain Badge */}
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-3 h-3 rounded-full bg-cyan-400 animate-ping" />
+                <span className="font-heading font-extrabold text-sm sm:text-base text-slate-800 dark:text-white flex items-center space-x-1.5">
+                  <span>Robo-Mentor Spoken Solution</span>
                 </span>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-white/10 text-cyan-200 px-2.5 py-0.5 rounded-full border border-white/10">
-                100% Problem-Specific Diagnosis
+              
+              <span className="text-[11px] font-extrabold uppercase tracking-wider bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 px-3 py-1 rounded-full border border-cyan-300 dark:border-cyan-800 shadow-sm">
+                {result.domainLabel || 'Empathetic Action Plan'}
               </span>
             </div>
 
-            {/* Extracted Context Badges */}
-            {result.detectedEntities && (
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10 text-xs">
-                {result.detectedEntities.subjectName && (
-                  <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-200 border border-cyan-500/30 font-medium">
-                    <span>📚</span>
-                    <span>Subject: <strong>{result.detectedEntities.subjectName}</strong></span>
-                  </span>
+            {/* Center Stage: The Robot & The Voice Dialogue */}
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              
+              {/* Robot Avatar Column (4 cols on md) */}
+              <div className="md:col-span-4 flex flex-col items-center justify-center p-2">
+                <RobotSolverAvatar
+                  isSpeaking={isSpeaking}
+                  isAnalyzing={false}
+                  hasFinished={hasFinishedSpeaking}
+                  onToggleSpeech={isSpeaking ? handleStopSpeech : handleRepeatSpeech}
+                  onRepeatSpeech={handleRepeatSpeech}
+                  studentName={studentName}
+                />
+              </div>
+
+              {/* Dialogue & Spoken Paragraph Column (8 cols on md) */}
+              <div className="md:col-span-8 space-y-4">
+                
+                {/* Speech Bubble Card */}
+                <div className="relative bg-white dark:bg-slate-800/90 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700/80 shadow-md space-y-3">
+                  
+                  {/* Speech Bubble Pointer for Desktop */}
+                  <div className="hidden md:block absolute -left-3 top-10 w-6 h-6 bg-white dark:bg-slate-800/90 border-l border-b border-slate-200 dark:border-slate-700/80 transform rotate-45" />
+
+                  {/* Robot Header Inside Bubble */}
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-base">🎙️</span>
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Spoken Summarized Answer:
+                      </span>
+                    </div>
+
+                    {isSpeaking && (
+                      <div className="flex items-center space-x-1 text-cyan-600 dark:text-cyan-400 text-xs font-bold">
+                        <span className="w-1.5 h-3 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-4 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span className="text-[11px] ml-1">Speaking</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* The Summarized Paragraph Content */}
+                  <div className="text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-relaxed font-sans font-medium">
+                    <p className="p-1 select-text">
+                      "{currentSummarizedText}"
+                    </p>
+                  </div>
+
+                  {/* Spoken Action Callout */}
+                  {result.solution?.immediate5Min && (
+                    <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 flex items-start space-x-2 text-xs">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold shrink-0 mt-0.5">⚡ Key Step:</span>
+                      <span className="text-emerald-900 dark:text-emerald-200 font-medium leading-relaxed">
+                        {result.solution.immediate5Min}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* PRIMARY ACTION BAR WITH THE REPEAT OPTION */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  
+                  {/* REPEAT OPTION - High Visual Prominence */}
+                  <button
+                    onClick={handleRepeatSpeech}
+                    className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition shadow-lg transform active:scale-95 ${
+                      hasFinishedSpeaking
+                        ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white ring-4 ring-emerald-400/30 scale-105'
+                        : isSpeaking
+                        ? 'bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-200 border border-cyan-300 dark:border-cyan-700 hover:bg-cyan-200'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400/20'
+                    }`}
+                    title="Repeat Robot's voice answer"
+                  >
+                    <RotateCcw className={`w-4 h-4 ${hasFinishedSpeaking ? 'animate-spin' : ''}`} style={{ animationDuration: '4s' }} />
+                    <span>Repeat Voice Answer</span>
+                  </button>
+
+                  {/* Stop / Pause Voice Button (When currently speaking) */}
+                  {isSpeaking && (
+                    <button
+                      onClick={handleStopSpeech}
+                      className="flex items-center space-x-1.5 px-4 py-3 rounded-2xl text-xs sm:text-sm font-bold bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-950 dark:hover:bg-rose-900 dark:text-rose-300 transition"
+                      title="Pause or stop robot voice"
+                    >
+                      <VolumeX className="w-4 h-4" />
+                      <span>Stop Voice</span>
+                    </button>
+                  )}
+
+                  {/* Copy Summarized Answer */}
+                  <button
+                    onClick={handleCopySummarized}
+                    className="flex items-center space-x-1.5 px-3.5 py-3 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    <span>{copied ? 'Copied Answer!' : 'Copy'}</span>
+                  </button>
+
+                  {/* Add Action to Daily Plan */}
+                  <button
+                    onClick={handleAddActionToDailyPlan}
+                    disabled={addedToPlan}
+                    className={`flex items-center space-x-1.5 px-3.5 py-3 rounded-2xl text-xs font-bold transition ${
+                      addedToPlan
+                        ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200'
+                        : 'bg-teal-600 hover:bg-teal-700 text-white'
+                    }`}
+                  >
+                    {addedToPlan ? <Check className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
+                    <span>{addedToPlan ? 'Added to Plan!' : 'Add to Plan'}</span>
+                  </button>
+
+                  {/* Save to Journal */}
+                  <button
+                    onClick={handleSaveToGrowthJournal}
+                    disabled={savedToJournal}
+                    className={`flex items-center space-x-1.5 px-3.5 py-3 rounded-2xl text-xs font-bold transition ${
+                      savedToJournal
+                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }`}
+                  >
+                    {savedToJournal ? <Check className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
+                    <span>{savedToJournal ? 'Saved!' : 'Save Breakthrough'}</span>
+                  </button>
+
+                </div>
+
+                {/* Helpful Notification once finished speaking */}
+                {hasFinishedSpeaking && (
+                  <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between animate-fade-in">
+                    <span className="flex items-center space-x-1.5">
+                      <Sparkles className="w-4 h-4 text-emerald-500" />
+                      <span>Finished speaking! Click <strong>"Repeat Voice Answer"</strong> above anytime you wish to hear this guidance again.</span>
+                    </span>
+                  </div>
                 )}
-                {result.detectedEntities.timeframe && (
-                  <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/30 font-medium">
-                    <span>⏱️</span>
-                    <span>Timeline: <strong>{result.detectedEntities.timeframe}</strong></span>
+
+              </div>
+            </div>
+
+            {/* Recommended Interactive Tool Quick Launch */}
+            {result.solution?.recommendedTool && (
+              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-800/50 p-4 rounded-2xl">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+                    Recommended Interactive Tool:
                   </span>
-                )}
-                {result.detectedEntities.peopleName && (
-                  <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-200 border border-purple-500/30 font-medium">
-                    <span>👥</span>
-                    <span>Context: <strong>{result.detectedEntities.peopleName}</strong></span>
-                  </span>
-                )}
-                {result.detectedEntities.symptoms?.map((sym, sIdx) => (
-                  <span key={sIdx} className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-500/30 font-medium">
-                    <span>⚡</span>
-                    <span>Somatic Signal: <strong>{sym}</strong></span>
-                  </span>
-                ))}
+                  <p className="text-xs font-bold text-slate-800 dark:text-white">
+                    {result.solution.recommendedTool.title}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleLaunchRecommendedTool(result.solution.recommendedTool.id)}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center space-x-1.5"
+                >
+                  <span>Launch Tool</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             )}
+
           </div>
 
-          {/* Core 3 Pillars: 1) Understanding, 2) Solution, 3) Motivation */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* PILLAR 1: UNDERSTANDING THE PROBLEM */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-9 h-9 rounded-2xl bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 flex items-center justify-center">
-                    <BrainCircuit className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Pillar 1</span>
-                    <h3 className="font-heading font-extrabold text-base text-slate-800 dark:text-white">
-                      Understanding Your Problem
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Brief Summary */}
-                <div className="p-3.5 bg-cyan-50/60 dark:bg-cyan-950/20 border border-cyan-100 dark:border-cyan-900/40 rounded-2xl space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-cyan-800 dark:text-cyan-300">
-                    What's Really Happening:
-                  </span>
-                  <p className="text-xs text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
-                    {result.understanding.summary}
-                  </p>
-                </div>
-
-                {/* Root Cause Mechanism */}
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1">
-                    <Target className="w-3.5 h-3.5 text-cyan-600" />
-                    <span>Biological / Psychological Trigger:</span>
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    {result.understanding.rootCause}
-                  </p>
-                </div>
-
-                {/* Empathetic Validation */}
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1">
-                    <HeartHandshake className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Empathetic Validation:</span>
-                  </h4>
-                  <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 italic">
-                    "{result.understanding.validation}"
-                  </p>
-                </div>
+          {/* OPTIONAL ACCORDION: VIEW FULL TECHNICAL BREAKDOWN */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+            <button
+              onClick={() => setShowFullDetails(!showFullDetails)}
+              className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+            >
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                  {showFullDetails ? 'Hide Detailed Multi-Step Breakdown' : 'Want to read full 3-step technical details? (Optional)'}
+                </span>
               </div>
+              {showFullDetails ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+            </button>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Cognitive Clarity</span>
-                <span className="font-bold text-cyan-600 dark:text-cyan-400">100% Validated</span>
-              </div>
-            </div>
-
-            {/* PILLAR 2: PRACTICAL SOLUTION */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-9 h-9 rounded-2xl bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300 flex items-center justify-center">
-                    <Lightbulb className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-600 dark:text-teal-400">Pillar 2</span>
-                    <h3 className="font-heading font-extrabold text-base text-slate-800 dark:text-white">
-                      Actionable Solution Plan
-                    </h3>
-                  </div>
-                </div>
-
-                {/* 5-Min Emergency Relief */}
-                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-2xl space-y-1">
-                  <div className="flex items-center space-x-1.5 text-amber-800 dark:text-amber-300 text-xs font-bold">
-                    <Clock className="w-3.5 h-3.5 text-amber-600" />
-                    <span>⚡ Immediate 5-Minute Relief:</span>
-                  </div>
-                  <p className="text-xs text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-                    {result.solution.immediate5Min}
-                  </p>
-                </div>
-
-                {/* 3 Step Roadmap */}
-                <div className="space-y-2">
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-400">
-                    Step-by-Step Strategic Roadmap:
-                  </span>
+            {showFullDetails && (
+              <div className="p-5 sm:p-6 border-t border-slate-100 dark:border-slate-800 space-y-6 animate-fade-in bg-slate-50/50 dark:bg-slate-900/40">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   
-                  {result.solution.steps.map((st, idx) => (
-                    <div 
-                      key={idx}
-                      className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-0.5"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="w-4 h-4 rounded-full bg-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                          {idx + 1}
-                        </span>
-                        <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                          {st.title}
-                        </h5>
-                      </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400 pl-6 leading-relaxed">
-                        {st.action}
-                      </p>
+                  {/* Pillar 1 */}
+                  <div className="bg-white dark:bg-slate-800/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                    <div className="flex items-center space-x-2 text-cyan-600 dark:text-cyan-400">
+                      <BrainCircuit className="w-4 h-4" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Root Cause Mechanism</h4>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {result.understanding?.rootCause}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 italic border-t border-slate-100 dark:border-slate-700 pt-2">
+                      "{result.understanding?.validation}"
+                    </p>
+                  </div>
 
-                {/* Recommended Interactive Tool */}
-                {result.solution.recommendedTool && (
-                  <div className="p-3 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800/80 rounded-2xl border border-teal-200 dark:border-slate-700 flex items-center justify-between gap-2">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider">
-                        Recommended Tool:
-                      </span>
-                      <p className="text-xs font-bold text-slate-800 dark:text-white">
-                        {result.solution.recommendedTool.title}
-                      </p>
+                  {/* Pillar 2 */}
+                  <div className="bg-white dark:bg-slate-800/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                    <div className="flex items-center space-x-2 text-teal-600 dark:text-teal-400">
+                      <Target className="w-4 h-4" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Step-by-Step Strategic Roadmap</h4>
                     </div>
-                    <button
-                      onClick={() => handleLaunchRecommendedTool(result.solution.recommendedTool.id)}
-                      className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-sm transition whitespace-nowrap shrink-0 flex items-center space-x-1"
-                    >
-                      <span>Launch</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Realistic Execution</span>
-                <span className="font-bold text-teal-600 dark:text-teal-400">Step 1 Ready</span>
-              </div>
-            </div>
-
-            {/* PILLAR 3: MOTIVATION & ENCOURAGEMENT */}
-            <div className="bg-gradient-to-b from-amber-50/70 via-white to-orange-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border border-amber-200 dark:border-amber-800/40 rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 flex items-center justify-center">
-                    <Flame className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Pillar 3</span>
-                    <h3 className="font-heading font-extrabold text-base text-slate-800 dark:text-white">
-                      Your Motivational Boost
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Pep Talk Letter */}
-                <div className="p-4 bg-white/80 dark:bg-slate-800/80 border border-amber-100 dark:border-amber-900/30 rounded-2xl shadow-sm space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-700 dark:text-amber-400 flex items-center space-x-1">
-                      <Sparkles className="w-3 h-3" />
-                      <span>Compassionate Pep Talk:</span>
-                    </span>
-                    <button
-                      onClick={handleToggleSpeech}
-                      className="text-amber-600 hover:text-amber-700 text-xs font-bold flex items-center space-x-1"
-                    >
-                      {isSpeaking ? <VolumeX className="w-3.5 h-3.5 text-rose-500" /> : <Volume2 className="w-3.5 h-3.5" />}
-                      <span className="text-[11px]">{isSpeaking ? 'Mute' : 'Speak'}</span>
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed font-serif sm:font-sans font-medium">
-                    {result.motivation.pepTalk}
-                  </p>
-                </div>
-
-                {/* Power Affirmation */}
-                <div className="p-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl shadow-md space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold opacity-90 block">
-                    🌟 Golden Power Affirmation:
-                  </span>
-                  <p className="text-xs font-heading font-extrabold tracking-wide italic">
-                    "{result.motivation.affirmation}"
-                  </p>
-                </div>
-
-                {/* Mindset Shift */}
-                {result.motivation.mindsetShift && (
-                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-400">
-                      🔄 Mindset Shift:
-                    </span>
-                    <div className="text-[11px] space-y-1">
-                      <div className="text-rose-600 dark:text-rose-400 line-through">
-                        ❌ {result.motivation.mindsetShift.from}
-                      </div>
-                      <div className="text-emerald-700 dark:text-emerald-300 font-bold">
-                        ✅ {result.motivation.mindsetShift.to}
-                      </div>
+                    <div className="space-y-2">
+                      {result.solution?.steps?.map((st, idx) => (
+                        <div key={idx} className="text-xs space-y-0.5">
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{idx + 1}. {st.title}</span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">{st.action}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                )}
-              </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Inner Strength</span>
-                <span className="font-bold text-amber-600 dark:text-amber-400">Restored 🔥</span>
-              </div>
-            </div>
+                  {/* Pillar 3 */}
+                  <div className="bg-white dark:bg-slate-800/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                    <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400">
+                      <Flame className="w-4 h-4" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Affirmation & Mindset</h4>
+                    </div>
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-300 italic">
+                      "{result.motivation?.affirmation}"
+                    </p>
+                    {result.motivation?.mindsetShift && (
+                      <div className="text-[11px] space-y-1 border-t border-slate-100 dark:border-slate-700 pt-2">
+                        <div className="text-rose-500 line-through">❌ {result.motivation.mindsetShift.from}</div>
+                        <div className="text-emerald-600 dark:text-emerald-400 font-semibold">✅ {result.motivation.mindsetShift.to}</div>
+                      </div>
+                    )}
+                  </div>
 
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Reset / Solve Another Problem Button */}
           <div className="text-center pt-2">
             <button
               onClick={() => {
+                handleStopSpeech();
                 setResult(null);
                 setProblemText('');
+                setHasFinishedSpeaking(false);
                 window.scrollTo({ top: 100, behavior: 'smooth' });
               }}
-              className="inline-flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-2xl shadow-sm transition"
+              className="inline-flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-5 py-2.5 rounded-2xl shadow-sm transition"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Solve Another Problem or Try New Dilemma</span>
+              <span>Solve Another Problem or Dilemma</span>
             </button>
           </div>
 

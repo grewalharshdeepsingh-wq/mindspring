@@ -12,6 +12,7 @@ import DownloadAppModal from './components/DownloadAppModal';
 import ActivityRunnerModal from './components/ActivityRunnerModal';
 import MiniGameStudio from './components/MiniGameStudio';
 import ProblemSolver from './components/ProblemSolver';
+import MobileBottomNav from './components/MobileBottomNav';
 import { loadMindSpringVault, saveMindSpringVault } from './utils/storage';
 import { generateDailyPlan, ACTIVITY_CATALOG } from './data/activityCatalog';
 import { ShieldAlert, Sparkles, Heart } from 'lucide-react';
@@ -222,7 +223,7 @@ export default function App() {
         />
 
         {/* Main Application Container */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1 w-full pb-24 md:pb-6">
           {activeTab === 'plan' && (
             <DailyPlanView
               plan={vault.dailyPlan || []}
@@ -373,16 +374,29 @@ export default function App() {
         </footer>
 
         {/* Floating Emergency Support Hotkey Button */}
-        <div className="fixed bottom-5 right-5 z-40">
+        <div className="fixed bottom-20 md:bottom-5 right-4 md:right-5 z-40">
           <button
             onClick={() => setIsCrisisOpen(true)}
-            className="flex items-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-3 rounded-full shadow-2xl transition transform hover:scale-105 active:scale-95 border-2 border-white/40"
+            className="flex items-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-full shadow-2xl transition transform hover:scale-105 active:scale-95 border-2 border-white/40"
             title="Instant crisis helplines and confidential counselor connection"
           >
             <ShieldAlert className="w-4 h-4 animate-pulse" />
             <span className="hidden sm:inline">Emergency Support</span>
           </button>
         </div>
+
+        {/* Mobile Ergonomic Bottom Navigation Bar (md:hidden) */}
+        <MobileBottomNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenCheckIn={() => setIsCheckInOpen(true)}
+          onOpenCrisis={() => setIsCrisisOpen(true)}
+          onOpenDownloadApp={() => setIsDownloadOpen(true)}
+          darkMode={darkMode}
+          onToggleTheme={() => setDarkMode(prev => !prev)}
+          completedCount={completedCount}
+          totalPlanCount={vault.dailyPlan?.length || 4}
+        />
 
         {/* Modals */}
         <CheckInModal

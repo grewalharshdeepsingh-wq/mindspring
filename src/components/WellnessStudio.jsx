@@ -98,8 +98,8 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
         </div>
       </div>
 
-      {/* Tool Navigation Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      {/* Tool Navigation Cards: Horizontal swipe on mobile, multi-column grid on laptop */}
+      <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 no-scrollbar -mx-1 px-1">
         {tools.map((t) => {
           const Icon = t.icon;
           const isActive = activeTool === t.id;
@@ -107,7 +107,7 @@ export default function WellnessStudio({ flowers, onAddFlower }) {
             <button
               key={t.id}
               onClick={() => setActiveTool(t.id)}
-              className={`p-3 rounded-2xl border-2 text-left transition flex flex-col justify-between h-28 ${
+              className={`p-3 rounded-2xl border-2 text-left transition flex flex-col justify-between min-w-[130px] sm:min-w-0 flex-1 shrink-0 sm:shrink h-24 sm:h-28 active:scale-95 ${
                 isActive
                   ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-md ring-2 ring-emerald-400/20'
                   : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-slate-300'

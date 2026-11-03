@@ -301,9 +301,10 @@ export default function ProgressTable({
         </div>
       </div>
 
-      {/* Main Interactive Table */}
+      {/* Main Interactive Table / Cards */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Full 8-Column Table (UNTOUCHED) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold text-[10px] border-b border-slate-200 dark:border-slate-700">
               <tr>
@@ -387,6 +388,74 @@ export default function ProgressTable({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: High-Accessibility Adaptive Cards (md:hidden) */}
+        <div className="md:hidden space-y-3 p-3">
+          {filteredRecords.length > 0 ? (
+            filteredRecords.map((r) => (
+              <div 
+                key={r.id}
+                className="bg-slate-50/70 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/70 space-y-2.5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-[11px] text-slate-500 font-semibold bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                      {r.date}
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">
+                      {r.studentName || 'Self'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 text-amber-500 font-bold text-xs bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
+                      <span>{r.rating || 5}</span>
+                      <Star className="w-3 h-3 fill-amber-400" />
+                    </div>
+                    <button
+                      onClick={() => onDeleteRecord(r.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-500 transition active:scale-95"
+                      aria-label="Delete entry"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                    {r.stressor}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">
+                    {r.mood}
+                  </span>
+                </div>
+
+                {r.goal && (
+                  <div className="text-xs text-slate-700 dark:text-slate-200 font-medium bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Target Micro-Goal</span>
+                    "{r.goal}"
+                  </div>
+                )}
+
+                {r.reflection && (
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 italic bg-slate-100/60 dark:bg-slate-900/40 p-2 rounded-xl">
+                    "{r.reflection}"
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between text-[11px] pt-1 text-slate-400 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <span>{r.school || 'School'}</span>
+                  <span className="font-bold text-teal-600 dark:text-teal-400">{r.tasksCompleted || 'Completed'}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-8 text-center text-xs text-slate-400">
+              No progress entries match your filter.
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -55,8 +55,8 @@ export default function ActivityRunnerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-emerald-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl max-w-2xl w-full shadow-2xl border border-emerald-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[96vh] sm:max-h-[92vh]">
         
         {/* Top Header with Activity Switcher and Close */}
         <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -245,14 +245,14 @@ export default function ActivityRunnerModal({
                   value={reflectionNote}
                   onChange={(e) => setReflectionNote(e.target.value)}
                   placeholder="e.g., Breathing slowed my heart rate; feeling ready to study"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white"
+                  className="w-full px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white"
                 />
               </div>
 
               <div className="space-y-2 pt-2">
                 <button
                   onClick={handleSaveFeedbackAndExit}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm rounded-2xl shadow-lg transition"
+                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm rounded-2xl shadow-lg transition min-h-[46px] active:scale-98"
                 >
                   Save to Progress Table & Return
                 </button>
